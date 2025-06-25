@@ -12,23 +12,23 @@ const Clients = () => {
   const clients = [
     {
       name: "TCS",
-      logo: "src/img/tcs.png",
+      logo: "/img/tcs.png",
     },
     {
       name: "Muthoot Finance",
-      logo: "src/img/muthoot.svg",
+      logo: "/img/muthoot.svg",
     },
     {
       name: "Infosys",
-      logo: "src/img/infosys.png",
+      logo: "/img/infosys.png",
     },
     {
       name: "Vi",
-      logo: "src/img/vodafone.png",
+      logo: "/img/vodafone.png",
     },
     {
       name: "vi",
-      logo: "src/img/vi.png",
+      logo: "/img/vi.png",
     },
     {
       name: "hcl",
@@ -63,17 +63,17 @@ const Home = () => {
   const services = [
     {
       title: "Job Placement",
-      image: "src/img/img1.jpg",
+      image: "/img/img1.jpg",
       desc: "We help you find the right role with top employers in India and abroad.",
     },
     {
       title: "Career Consulting",
-      image: "src/img/img2.jpg",
+      image: "/img/img2.jpg",
       desc: "Professional guidance for career change, growth, or fresh starts.",
     },
     {
       title: "Resume Building",
-      image: "src/img/img3.jpg",
+      image: "/img/img3.jpg",
       desc: "We craft powerful resumes that get attention from recruiters.",
     },
   ];
@@ -121,7 +121,7 @@ const Home = () => {
     loop
     muted
     className="absolute top-0 left-0 w-full h-full object-cover z-0"
-    src="src/img/vid1.mp4"
+    src="/img/vid1.mp4"
   />
   <div className="absolute inset-0 bg-black bg-opacity-60 z-10 flex items-center justify-center">
     <div className="text-center px-4 z-20">

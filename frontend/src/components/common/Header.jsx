@@ -13,7 +13,7 @@ const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 text-2xl font-bold text-blue-600">
-            <img src="src/img/ozarx.png" alt="logo" className="w-40 h-30" />
+            <img src="/img/ozarx.png" alt="logo" className="w-40 h-30" />
           </div>
 
           {/* Desktop Navigation */}
