@@ -62,7 +62,7 @@ const Header = () => {
             {navItems.map((item) => (
               <a
                 key={item}
-                href={`#${item.toLowerCase()}`}
+                href={`/${item.toLowerCase()}`}
                 className="block text-gray-700 hover:text-blue-600 transition"
               >
                 {item}
