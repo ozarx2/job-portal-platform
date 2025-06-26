@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const navItems = ["Home", "About", "Services", "Careers", "Contact"];
+  const navItems = ["Home", "About", "Services", "Careers", "Contact", "login"];
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -39,7 +39,7 @@ const Header = () => {
           {/* Call to Action */}
           <div className="hidden md:block">
             <a
-              href="#contact"
+              href="/signup"
               className="px-5 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
             >
               Get Started
@@ -69,7 +69,7 @@ const Header = () => {
               </a>
             ))}
             <a
-              href="#contact"
+              href="/login"
               className="block mt-2 text-center bg-blue-600 text-white py-2 rounded-full hover:bg-blue-700 transition"
             >
               Get Started
