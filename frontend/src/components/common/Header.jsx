@@ -39,7 +39,7 @@ const Header = () => {
           {/* Call to Action */}
           <div className="hidden md:block">
             <a
-              href="/signup"
+              href="/Signup"
               className="px-5 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
             >
               Get Started
