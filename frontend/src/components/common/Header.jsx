@@ -60,20 +60,22 @@ const Header = () => {
         <div className="md:hidden bg-white border-t border-gray-200 shadow-md">
           <nav className="px-4 py-4 space-y-2">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item}
-                href={`/${item.toLowerCase()}`}
+                to={`/${item.toLowerCase()}`}
                 className="block text-gray-700 hover:text-blue-600 transition"
+                onClick={() => setIsOpen(false)}
               >
                 {item}
-              </a>
+              </Link>
             ))}
-            <a
-              href="/login"
+            <Link
+              to="/login"
               className="block mt-2 text-center bg-blue-600 text-white py-2 rounded-full hover:bg-blue-700 transition"
+              onClick={() => setIsOpen(false)}
             >
               Get Started
-            </a>
+            </Link>
           </nav>
         </div>
       )}
