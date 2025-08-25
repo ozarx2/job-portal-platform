@@ -45,6 +45,15 @@ const Header = () => {
               Get Started
             </a>
           </div>
+          <button
+  onClick={() => {
+    localStorage.removeItem('token');
+    window.location.href = '/login'; // or use useNavigate from react-router
+  }}
+  className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
+>
+  Logout
+</button>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
@@ -82,5 +91,14 @@ const Header = () => {
     </header>
   );
 };
+<button
+  onClick={() => {
+    localStorage.removeItem('token');
+    window.location.href = '/login'; // or use useNavigate from react-router
+  }}
+  className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
+>
+  Logout
+</button>
 
 export default Header;

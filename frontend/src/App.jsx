@@ -9,6 +9,10 @@ import About from './pages/About';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
 import Signup from './pages/Signup';  
+import CandidateDashboard from './pages/CandidateDashboard';
+import EmployerDashboard from './pages/EmployerDashboard';
+import AdminDashboard from './pages/AdminDashboard';  
+import AgentDashboard from './pages/AgentDashboard';
 
 
 function App() {
@@ -23,6 +27,10 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/candidate-dashboard" element={<CandidateDashboard />} />
+        <Route path="/employer-dashboard" element={<EmployerDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/agent-dashboard" element={<AgentDashboard/>}/>
       </Routes>
       <Footer />
     </Router>
