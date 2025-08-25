@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api', // Change to your backend URL
+  baseURL: 'https://job-portal-platform-m7ahktt1o-shamseers-projects-613ceea2.vercel.app', // Change to your backend URL
 });
 
 export const registerUser = (userData) => API.post('/auth/register', userData);
