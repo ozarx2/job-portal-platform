@@ -1,0 +1,318 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import ImportLeads from "./ImportLeads";
+
+
+export default function LeadsTable() {
+  const [leads, setLeads] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [editingLead, setEditingLead] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const limit = 10;
+
+  // Fetch leads
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+
+      const res = await axios.get(
+        `http://localhost:5000/api/crm/leads?page=${page}&limit=${limit}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      if (res.data.success) {
+        setLeads(res.data.data);
+        setTotal(res.data.total);
+      }
+    } catch (err) {
+      console.error("Error fetching leads:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, [page]);
+
+  // Delete lead
+  const deleteLead = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this lead?")) return;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+
+      await axios.delete(`http://localhost:5000/api/crm/leads/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      fetchLeads();
+    } catch (err) {
+      console.error("Error deleting lead:", err);
+    }
+  };
+
+  // Save edits
+  const saveEdit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+
+      await axios.put(
+        `http://localhost:5000/api/crm/leads/${editingLead._id}`,
+        editingLead,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      setEditingLead(null);
+      fetchLeads();
+    } catch (err) {
+      console.error("Error updating lead:", err);
+    }
+  };
+
+  return (
+    <div className="p-0">
+      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-200 px-6 py-4">
+        <h2 className="text-xl font-bold text-gray-800">
+          Leads ({total})
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">Manage and track your lead pipeline</p>
+      </div>
+      
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <span className="text-gray-600 font-medium">Loading leads...</span>
+          </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+        <thead>
+          <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Created Date</th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Name</th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Phone</th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Location</th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Status</th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {leads.map((lead, index) => (
+            <tr key={lead._id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
+                  {new Date(lead.createdAt).toLocaleDateString()}
+                </div>
+              </td>
+
+              {/* Name */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                {editingLead && editingLead._id === lead._id ? (
+                  <input
+                    value={editingLead.name}
+                    onChange={(e) =>
+                      setEditingLead({ ...editingLead, name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                )}
+              </td>
+              
+              {/* Phone */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                {editingLead && editingLead._id === lead._id ? (
+                  <input
+                    value={editingLead.phone}
+                    onChange={(e) =>
+                      setEditingLead({ ...editingLead, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <div className="text-sm text-gray-900">{lead.phone}</div>
+                )}
+              </td>
+              
+              {/* Location */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                {editingLead && editingLead._id === lead._id ? (
+                  <input
+                    value={editingLead.location}
+                    onChange={(e) =>
+                      setEditingLead({ ...editingLead, location: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <div className="text-sm text-gray-900">{lead.location || 'N/A'}</div>
+                )}
+              </td>
+              
+              {/* Status */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                {editingLead && editingLead._id === lead._id ? (
+                  <select
+                    value={editingLead.status}
+                    onChange={(e) =>
+                      setEditingLead({ ...editingLead, status: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option>New</option>
+                    <option>Contacted</option>
+                    <option>Interested</option>
+                    <option>Shortlisted</option>
+                    <option>Converted</option>
+                    <option>Discarded</option>
+                  </select>
+                ) : (
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    lead.status === 'New' ? 'bg-blue-100 text-blue-800' :
+                    lead.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800' :
+                    lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
+                    lead.status === 'Shortlisted' ? 'bg-purple-100 text-purple-800' :
+                    lead.status === 'Converted' ? 'bg-emerald-100 text-emerald-800' :
+                    lead.status === 'Discarded' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {lead.status}
+                  </span>
+                )}
+              </td>
+
+              {/* Actions */}
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                {editingLead && editingLead._id === lead._id ? (
+                  <div className="flex space-x-2">
+                    <button
+                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                      onClick={saveEdit}
+                    >
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save
+                    </button>
+                    <button
+                      className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+                      onClick={() => setEditingLead(null)}
+                    >
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex space-x-2">
+                    <button
+                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                      onClick={() => setEditingLead(lead)}
+                    >
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                      onClick={() => deleteLead(lead._id)}
+                    >
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+        </div>
+      )}
+
+      {/* Enhanced Pagination */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <button
+            disabled={page <= 1}
+            className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </button>
+          
+          {/* Page Numbers */}
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: Math.min(5, Math.ceil(total / limit)) }, (_, i) => {
+              const pageNum = i + 1;
+              const isCurrentPage = pageNum === page;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    isCurrentPage
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          
+          <button
+            disabled={page >= Math.ceil(total / limit)}
+            className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </button>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-gray-700">
+            Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} results
+          </span>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-700">Page</span>
+            <span className="px-2 py-1 text-sm font-medium text-gray-900 bg-gray-100 rounded">
+              {page} of {Math.ceil(total / limit)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
