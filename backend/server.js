@@ -41,13 +41,8 @@ const envAllowedOrigins = (process.env.FRONTEND_ORIGINS || '')
 const allowedOrigins = [...new Set([...staticAllowedOrigins, ...envAllowedOrigins])];
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // allow server-to-server or curl
-    const isAllowed =
-      allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin);
-    if (isAllowed) return callback(null, true);
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
+  // Dynamically reflect the request origin (allows all origins). Safer with Vary header set below.
+  origin: true,
   credentials: true,
 };
 
@@ -61,6 +56,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
