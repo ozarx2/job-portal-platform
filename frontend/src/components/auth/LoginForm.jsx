@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import API_ENDPOINTS from '../../config/api';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
@@ -19,7 +20,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData, {
+      const res = await axios.post(API_ENDPOINTS.LOGIN, formData, {
         headers: { 'Content-Type': 'application/json' },
       });
 
