@@ -43,7 +43,7 @@ const allowedOrigins = [...new Set([...staticAllowedOrigins, ...envAllowedOrigin
 const corsOptions = {
   // Dynamically reflect the request origin (allows all origins). Safer with Vary header set below.
   origin: true,
-  credentials: true,
+  credentials: false,
 };
 
 // Global CORS headers (belt-and-suspenders). Ensures headers on 404/500 too.
@@ -53,7 +53,7 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', requestOrigin);
     res.header('Vary', 'Origin');
   }
-  res.header('Access-Control-Allow-Credentials', 'true');
+  // Do not require credentials unless needed
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.header('Access-Control-Max-Age', '86400');
