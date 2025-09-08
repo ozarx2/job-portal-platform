@@ -4,6 +4,9 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/verifyToken');
+const sendEmail = require('../utils/email');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 
 //const { register, login } = require('../controllers/authController');
 
@@ -11,43 +14,41 @@ const authMiddleware = require('../middleware/verifyToken');
 
 // Register
 
+// Ensure JSON parsing at router level (extra safety)
+router.use(express.json());
+
 router.post('/register', async (req, res) => {
   console.log("BODY RECEIVED:", req.body); // 👈 This should log your data
-  const { name, email, password, role } = req.body;
+  const body = (req && typeof req.body === 'object' && req.body) ? req.body : {};
+  const { name, email, password, role } = body;
   try {
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ msg: 'User already exists' });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ msg: 'User already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    user = new User({ name, email, password: hashedPassword, role });
-    await user.save();
+    const newUser = new User({ name, email, password: hashedPassword, role });
+    await newUser.save();
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '2h' });
-    res.json({ token, user });
+    // Send verification email
+    const verifyToken = jwt.sign({ id: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: '24h' });
+    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verifyToken}`;
+    const html = `
+      <p>Hi ${newUser.name || 'there'},</p>
+      <p>Welcome to Ozarx HR. Please verify your email by clicking the link below:</p>
+      <p><a href="${verifyUrl}">Verify Email</a></p>
+      <p>If you did not create this account, you can ignore this email.</p>
+    `;
+    try {
+      await sendEmail({ to: newUser.email, subject: 'Verify Your Email - Ozarx HR', html });
+    } catch (e) {
+      console.error('Failed to send verification email:', e.message);
+    }
+
+    const token = jwt.sign({ id: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: '2h' });
+    res.json({ token, user: newUser });
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: err.message });
-  }
-});
-// Generate verification token (valid 24h)
-const verifyToken = jwt.sign(
-  { id: user._id, role: user.role },
-  process.env.JWT_SECRET,
-  { expiresIn: '24h' }
-);
-
-// Construct verification URL (frontend route)
-const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verifyToken}`;
-
-// Send verification email
-await sendEmail({
-  to: user.email,
-  subject: 'Verify Your Email - Ozarx HR',
-  template: 'email_verification', // your template name
-  context: {
-    name: user.name,
-    role: user.role,
-    verifyUrl
   }
 });
 // Email verification endpoint
@@ -56,12 +57,12 @@ router.get('/verify-email', async (req, res) => {
     const { token } = req.query;
     if (!token) return res.status(400).send('Token missing');
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).send('User not found');
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const foundUser = await User.findById(decoded.id);
+    if (!foundUser) return res.status(404).send('User not found');
 
-    user.isVerified = true;
-    await user.save();
+    foundUser.isVerified = true;
+    await foundUser.save();
 
     res.send('Email verified successfully. You can now login.');
   } catch (err) {
@@ -73,23 +74,41 @@ router.get('/verify-email', async (req, res) => {
 
 // Login
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const body = (req && typeof req.body === 'object' && req.body) ? req.body : {};
+  const { email, password } = body;
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
+    console.log('Login attempt body:', req.body);
+    if (!email || !password) {
+      return res.status(400).json({ msg: 'Email and password are required' });
+    }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const foundUser = await User.findOne({ email });
+    console.log('User found:', !!foundUser);
+    if (!foundUser) return res.status(400).json({ msg: 'Invalid credentials' });
+
+    if (!foundUser.password || typeof foundUser.password !== 'string') {
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
+
+    let isMatch = false;
+    try {
+      isMatch = await bcrypt.compare(password, foundUser.password);
+    } catch (cmpErr) {
+      console.error('bcrypt.compare failed:', cmpErr);
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
     if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '2h' });
-    res.json({ token, user });
+    const token = jwt.sign({ id: foundUser._id, role: foundUser.role }, JWT_SECRET, { expiresIn: '2h' });
+    res.json({ token, user: foundUser });
   } catch (err) {
-    res.status(500).json({ msg: err.message });
+    console.error('Login error:', err);
+    res.status(500).json({ msg: 'Internal Server Error' });
   }
 });
 router.get('/me', authMiddleware, async (req, res) => {
-  const user = await User.findById(req.user.id).select('-password');
-  res.json({ user });
+  const me = await User.findById(req.user.id).select('-password');
+  res.json({ user: me });
 });
 
 module.exports = router;

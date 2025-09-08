@@ -2,12 +2,15 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const connectDB = require('./config/db');
-connectDB();
 
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
+
+// Body parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Import routes
 const jobRoutes = require('./routes/jobs');
@@ -24,7 +27,6 @@ const leadRoutes = require('./routes/leadRoutes');
 
 
 // If using Express with cors middleware
-const cors = require('cors');
 app.use(cors({
   origin: [
     'http://localhost:5173',     // Development
@@ -52,5 +54,19 @@ app.get('/', (req, res) => {
   res.send('API is running');
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+// Vercel serverless: export handler
+module.exports = async (req, res) => {
+  try {
+    await connectDB();
+  } catch (e) {
+    console.error('DB connect error:', e.message);
+  }
+  return app(req, res);
+};
+
+// Local dev: start server only when executed directly
+if (require.main === module) {
+  connectDB().catch(() => {});
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+}
