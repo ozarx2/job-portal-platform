@@ -27,15 +27,32 @@ const leadRoutes = require('./routes/leadRoutes');
 
 
 // If using Express with cors middleware
-app.use(cors({
-  origin: [
-    'http://localhost:5173',     // Development
-    'https://ozarx.in',          // Production
-    'https://www.ozarx.in'       // If you use www subdomain
-   
-  ],
-  credentials: true
-}));
+const staticAllowedOrigins = [
+  'http://localhost:5173',
+  'https://ozarx.in',
+  'https://www.ozarx.in',
+  // Add your Vercel frontend preview/production domains explicitly if known
+  'https://job-portal-platform-git-master-shamseers-projects-613ceea2.vercel.app'
+];
+const envAllowedOrigins = (process.env.FRONTEND_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...staticAllowedOrigins, ...envAllowedOrigins])];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // allow server-to-server or curl
+    const isAllowed =
+      allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin);
+    if (isAllowed) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Mount routes
 app.use('/api/auth', authRoutes);
