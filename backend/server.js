@@ -32,7 +32,7 @@ const staticAllowedOrigins = [
   'https://ozarx.in',
   'https://www.ozarx.in',
   // Add your Vercel frontend preview/production domains explicitly if known
-  'https://job-portal-platform-git-master-shamseers-projects-613ceea2.vercel.app'
+  'https://www.ozarx.in',
 ];
 const envAllowedOrigins = (process.env.FRONTEND_ORIGINS || '')
   .split(',')
