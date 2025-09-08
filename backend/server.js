@@ -65,6 +65,9 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Mount routes
+app.all('/api/ping', (req, res) => {
+  res.json({ ok: true, method: req.method, path: req.path });
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
