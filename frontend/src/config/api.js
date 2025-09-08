@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://your-vercel-backend-url.vercel.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'job-portal-platform-3zjouyge4-shamseers-projects-613ceea2.vercel.app/api';
 
 export const API_ENDPOINTS = {
   // Auth endpoints
