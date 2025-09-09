@@ -67,6 +67,11 @@ const corsOptions = {
       return callback(null, true);
     }
     
+    // Allow your specific project deployments (pattern matching)
+    if (origin.includes('job-portal-platform') && origin.includes('shamseers-projects-613ceea2.vercel.app')) {
+      return callback(null, true);
+    }
+    
     // Log blocked origins for debugging
     console.log('CORS blocked origin:', origin);
     callback(new Error('Not allowed by CORS'));
