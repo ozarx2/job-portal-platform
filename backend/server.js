@@ -29,14 +29,29 @@ const staticAllowedOrigins = [
   'http://localhost:5173',
   'https://ozarx.in',
   'https://www.ozarx.in',
-  'https://job-portal-platform-one.vercel.app',
-  'https://job-portal-platform-two.vercel.app',
-  'https://job-portal-platform-three.vercel.app',
-  'https://job-portal-platform-four.vercel.app',
-  'https://job-portal-platform-five.vercel.app',
-  'https://job-portal-platform-six.vercel.app',
-  'https://job-portal-platform-seven.vercel.app',
+  // Your actual Vercel frontend URLs
   'https://frontend-7qkk5avoc-shamseers-projects-613ceea2.vercel.app',
+  // Your actual Vercel backend URLs
+  'https://job-portal-platform-pkmykvr3u-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-8cea0ab5v-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-566hzkltl-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-46a241auj-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-m5wnyiuim-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-l4cx3po9j-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-ei2pb73ul-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-q9m3s0yba-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-r601p8mgq-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-d335m23ao-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-gu3bebxfh-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-kldrsabc0-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-84tgcxhhm-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-syatc9ie4-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-1zy6f1qhn-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-a4llox6uy-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-g59teqqmt-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-8umh0bi3e-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-p6zs6vlfb-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-1t0gpaens-shamseers-projects-613ceea2.vercel.app',
 ];
 
 const envAllowedOrigins = (process.env.FRONTEND_ORIGINS || '')
@@ -67,10 +82,15 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // Allow your specific project deployments (pattern matching)
-    if (origin.includes('job-portal-platform') && origin.includes('shamseers-projects-613ceea2.vercel.app')) {
-      return callback(null, true);
-    }
+     // Allow your specific project deployments (pattern matching)
+     if (origin.includes('job-portal-platform') && origin.includes('shamseers-projects-613ceea2.vercel.app')) {
+       return callback(null, true);
+     }
+     
+     // Allow your frontend project deployments
+     if (origin.includes('frontend') && origin.includes('shamseers-projects-613ceea2.vercel.app')) {
+       return callback(null, true);
+     }
     
     // Log blocked origins for debugging
     console.log('CORS blocked origin:', origin);
