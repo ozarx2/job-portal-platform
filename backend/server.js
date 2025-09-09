@@ -33,6 +33,8 @@ const staticAllowedOrigins = [
   'https://www.ozarx.in',
   // Add your Vercel frontend preview/production domains explicitly if known
   'https://job-portal-platform-l4cx3po9j-shamseers-projects-613ceea2.vercel.app',
+  'https://frontend-ljtm774vq-shamseers-projects-613ceea2.vercel.app',
+  'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app',
 ];
 const envAllowedOrigins = (process.env.FRONTEND_ORIGINS || '')
   .split(',')
@@ -41,23 +43,53 @@ const envAllowedOrigins = (process.env.FRONTEND_ORIGINS || '')
 const allowedOrigins = [...new Set([...staticAllowedOrigins, ...envAllowedOrigins])];
 
 const corsOptions = {
-  // Dynamically reflect the request origin (allows all origins). Safer with Vary header set below.
-  origin: true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // For development, allow localhost with any port
+    if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
+    // Log blocked origins for debugging
+    console.log('CORS blocked origin:', origin);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: false,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  maxAge: 86400 // 24 hours
 };
 
 // Global CORS headers (belt-and-suspenders). Ensures headers on 404/500 too.
 app.use((req, res, next) => {
   const requestOrigin = req.headers.origin;
-  if (requestOrigin) {
+  
+  // Check if origin is allowed
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    res.header('Access-Control-Allow-Origin', requestOrigin);
+    res.header('Vary', 'Origin');
+  } else if (process.env.NODE_ENV === 'development' && requestOrigin && requestOrigin.includes('localhost')) {
     res.header('Access-Control-Allow-Origin', requestOrigin);
     res.header('Vary', 'Origin');
   }
-  // Do not require credentials unless needed
+  
+  // Set CORS headers
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.header('Access-Control-Max-Age', '86400');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  
   next();
 });
 

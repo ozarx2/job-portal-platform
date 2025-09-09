@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend-4q3sj2orb-shamseers-projects-613ceea2.vercel.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api';
 
 export const API_ENDPOINTS = {
   // Auth endpoints
