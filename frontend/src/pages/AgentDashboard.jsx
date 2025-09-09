@@ -12,7 +12,7 @@ export default function AgentDashboard() {
   const [agentName, setAgentName] = useState("Agent");
 
   const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+    import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
 
   const token = localStorage.getItem("token");
 

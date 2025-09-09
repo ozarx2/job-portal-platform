@@ -32,9 +32,14 @@ const staticAllowedOrigins = [
   'https://ozarx.in',
   'https://www.ozarx.in',
   // Add your Vercel frontend preview/production domains explicitly if known
-  'https://job-portal-platform-l4cx3po9j-shamseers-projects-613ceea2.vercel.app',
-  'https://frontend-ljtm774vq-shamseers-projects-613ceea2.vercel.app',
-  'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app',
+  'https://job-portal-platform-one.vercel.app',
+  'https://job-portal-platform-two.vercel.app',
+  'https://job-portal-platform-three.vercel.app',
+  'https://job-portal-platform-four.vercel.app',
+  'https://job-portal-platform-five.vercel.app',
+  'https://job-portal-platform-six.vercel.app',
+  'https://job-portal-platform-seven.vercel.app',
+
 ];
 const envAllowedOrigins = (process.env.FRONTEND_ORIGINS || '')
   .split(',')
