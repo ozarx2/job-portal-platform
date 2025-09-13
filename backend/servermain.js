@@ -16,21 +16,27 @@ const applicationRoutes = require('./routes/applications');
 const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
 const swaggerRoutes = require('./swagger');
-const agentApplicationsRoute = require('./routes/agentAppilcations');
+const agentApplicationsRoute = require('./routes/agentApplications'); // Added the missing 'i'
 const reportsRoute = require('./routes/reports');
 const crmRoutes = require('./routes/crm');
 const leadRoutes = require('./routes/leadRoutes');
 
-
+// Temporary fix - NOT recommended for production
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false // Must be false when origin is '*'
+}));
 
 
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
-app.use(express.json());
+//app.use(cors({
+ // origin: 'http://localhost:5173',//
+ // methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  //credentials: true
+//}));//
+//app.use(express.json()); //
 
 // Mount routes
 app.use('/api/auth', authRoutes);
