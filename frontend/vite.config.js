@@ -28,10 +28,12 @@ export default defineConfig({
           router: ['react-router-dom'],
           ui: ['@mui/material', '@mui/icons-material'],
         },
+        format: 'es',
       },
     },
   },
   define: {
     global: 'globalThis',
   },
+  base: './',
 })
