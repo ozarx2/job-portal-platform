@@ -12,7 +12,7 @@ export default function JobListing() {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/jobs');
+      const res = await axios.get('http://35.192.180.25:5000/api/jobs');
       setJobs(res.data || []);
     } catch (err) {
       console.error(err);
@@ -26,7 +26,7 @@ export default function JobListing() {
 
     try {
       await axios.post(
-        `http://localhost:5000/api/applications`,
+        `http://35.192.180.25:5000/api/applications`,
         { jobId },
         {
           headers: {

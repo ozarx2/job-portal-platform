@@ -111,7 +111,7 @@ export default function ImportLeads({ onImportSuccess }) {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/crm/leads/import",
+        "http://35.192.180.25:5000/api/crm/leads/import",
         { mappedData },
         { 
           headers: {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { loginUser } from '../../api';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -46,18 +46,7 @@ const LoginForm = () => {
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      
-      const response = await axios.post(
-        `${apiUrl}/auth/login`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          withCredentials: true,
-        }
-      );
+      const response = await loginUser(formData);
 
       // Debug: Log the full response to see the actual structure
       console.log('Full API Response:', response.data);
