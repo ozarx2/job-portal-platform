@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://35.192.180.25/api', // GCP VM API with HTTPS
+  baseURL: 'https://api.ozarx.in/api', // Using your domain with proper SSL
   timeout: 10000, // 10 second timeout
   headers: {
     'Content-Type': 'application/json',

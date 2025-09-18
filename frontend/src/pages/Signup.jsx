@@ -26,7 +26,7 @@ export default function Signup() {
     }
 
     try {
-      const res = await axios.post('https://35.192.180.25/api/auth/register', {
+      const res = await axios.post('https://api.ozarx.in/api/auth/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,

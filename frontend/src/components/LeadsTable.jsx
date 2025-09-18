@@ -23,7 +23,7 @@ export default function LeadsTable() {
       }
 
       const res = await axios.get(
-        `https://35.192.180.25/api/crm/leads?page=${page}&limit=${limit}`,
+        `https://api.ozarx.in/api/crm/leads?page=${page}&limit=${limit}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -55,7 +55,7 @@ export default function LeadsTable() {
         return;
       }
 
-      await axios.delete(`https://35.192.180.25/api/crm/leads/${id}`, {
+      await axios.delete(`https://api.ozarx.in/api/crm/leads/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -76,7 +76,7 @@ export default function LeadsTable() {
       }
 
       await axios.put(
-        `https://35.192.180.25/api/crm/leads/${editingLead._id}`,
+        `https://api.ozarx.in/api/crm/leads/${editingLead._id}`,
         editingLead,
         {
           headers: {

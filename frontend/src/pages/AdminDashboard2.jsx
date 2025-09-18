@@ -47,9 +47,9 @@ export default function AdminDashboard() {
       };
 
       const [userRes, jobRes, appRes] = await Promise.all([
-        axios.get('https://35.192.180.25/api/admin/users', { headers }),
-        axios.get('https://35.192.180.25/api/jobs', { headers }),
-        axios.get('https://35.192.180.25/api/admin/applications', { headers }),
+        axios.get('https://api.ozarx.in/api/admin/users', { headers }),
+        axios.get('https://api.ozarx.in/api/jobs', { headers }),
+        axios.get('https://api.ozarx.in/api/admin/applications', { headers }),
       ]);
 
       setUsers(userRes.data);
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
         ...leadFilters
       };
 
-      const response = await axios.get('https://35.192.180.25/api/crm/leads', {
+      const response = await axios.get('https://api.ozarx.in/api/crm/leads', {
         headers,
         params
       });
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       await axios.put(
-        `https://35.192.180.25/api/crm/leads/${editingLead._id}`,
+        `https://api.ozarx.in/api/crm/leads/${editingLead._id}`,
         editingLead,
         { headers }
       );
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
     
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.delete(`https://35.192.180.25/api/crm/leads/${id}`, { headers });
+      await axios.delete(`https://api.ozarx.in/api/crm/leads/${id}`, { headers });
       fetchLeads();
     } catch (err) {
       console.error('Error deleting lead:', err);
