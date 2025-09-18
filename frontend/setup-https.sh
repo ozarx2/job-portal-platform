@@ -1,9 +1,14 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # GCP VM HTTPS Setup Script
 # Run this on your GCP VM to set up HTTPS with Let's Encrypt
 
-echo "Setting up HTTPS for your GCP VM..."
+DOMAIN="${1:-api.ozarx.in}"
+EMAIL="${2:-your-email@example.com}"
+
+echo "Setting up HTTPS for ${DOMAIN}..."
 
 # Update system
 sudo apt update
@@ -18,16 +23,19 @@ sudo apt install certbot python3-certbot-nginx -y
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
-# Configure firewall
-sudo ufw allow 'Nginx Full'
-sudo ufw allow OpenSSH
-sudo ufw --force enable
+# NOTE: Configure TCP 80/443 in GCP VPC firewall. Skipping ufw here.
 
 # Create Nginx configuration for your API
 sudo tee /etc/nginx/sites-available/job-portal-api << EOF
 server {
     listen 80;
-    server_name 35.192.180.25;
+    listen [::]:80;
+    server_name ${DOMAIN};
+
+    # ACME challenge endpoint for Certbot
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
 
     location / {
         proxy_pass http://localhost:5000;
@@ -44,14 +52,22 @@ server {
 EOF
 
 # Enable the site
-sudo ln -s /etc/nginx/sites-available/job-portal-api /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/job-portal-api /etc/nginx/sites-enabled/job-portal-api
+sudo rm -f /etc/nginx/sites-enabled/default || true
 sudo nginx -t
 sudo systemctl reload nginx
 
 echo "Nginx configured. Now getting SSL certificate..."
 
-# Get SSL certificate (replace with your domain if you have one)
-sudo certbot --nginx -d 35.192.180.25 --non-interactive --agree-tos --email your-email@example.com
+# Obtain & install SSL certificate for DOMAIN
+sudo certbot --nginx -d "${DOMAIN}" --non-interactive --agree-tos --email "${EMAIL}"
+
+# Add HSTS header (optional but recommended)
+CONF="/etc/nginx/sites-enabled/job-portal-api"
+if ! grep -q "Strict-Transport-Security" "${CONF}" 2>/dev/null; then
+  sudo sed -i "/ssl_certificate_key/a \\    add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\" always;" "${CONF}" || true
+  sudo nginx -t && sudo systemctl reload nginx
+fi
 
 echo "HTTPS setup complete!"
-echo "Your API will be available at: https://35.192.180.25"
+echo "Your API will be available at: https://${DOMAIN}"
