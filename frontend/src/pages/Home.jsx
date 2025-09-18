@@ -192,9 +192,10 @@ const Home = () => {
               </div>
               <div className="mt-4 md:mt-0 text-right">
                 <p className="text-blue-600 font-medium">{job.salary}</p>
-                <button className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition">
-                  <Link to="/login">Apply Now</Link>
-                </button>
+                
+                <Link className="mt-2 inline-block bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition" to="/login"
+                       >Apply Now</Link>
+
               </div>
             </div>
           ))}
