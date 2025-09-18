@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://35.192.180.25:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://35.192.180.25/api';
 
 export const API_ENDPOINTS = {
   // Auth endpoints

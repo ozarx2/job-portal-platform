@@ -23,7 +23,7 @@ export default function CandidateDashboard() {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get('https://35.192.180.25:5000/api/jobs');
+      const res = await axios.get('https://35.192.180.25/api/jobs');
       setJobs(res.data); // <-- directly set data
     } catch (err) {
       console.error('Error fetching jobs:', err.message);
@@ -32,14 +32,14 @@ export default function CandidateDashboard() {
   
 
   const fetchApplications = async () => {
-    const res = await axios.get('https://35.192.180.25:5000/api/applications/me', {
+    const res = await axios.get('https://35.192.180.25/api/applications/me', {
       headers: { Authorization: `Bearer ${token}` },
     });
     setApplications(res.data || []);
   };
 
   const fetchProfile = async () => {
-    const res = await axios.get('https://35.192.180.25:5000/api/auth/me', {
+    const res = await axios.get('https://35.192.180.25/api/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     });
     setProfile(res.data.user);
@@ -65,7 +65,7 @@ export default function CandidateDashboard() {
     formData.append('phone', profile.phone);
     if (profile.image) formData.append('image', profile.image);
 
-    await axios.put('https://35.192.180.25:5000/api/users/update', formData, {
+    await axios.put('https://35.192.180.25/api/users/update', formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',
@@ -79,7 +79,7 @@ export default function CandidateDashboard() {
     const formData = new FormData();
     formData.append('resume', resumeFile);
 
-    await axios.post('https://35.192.180.25:5000/api/users/resume', formData, {
+    await axios.post('https://35.192.180.25/api/users/resume', formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',
@@ -91,7 +91,7 @@ export default function CandidateDashboard() {
 
   const applyJob = async (jobId) => {
     await axios.post(
-      `https://35.192.180.25:5000/api/applications/apply`,
+      `https://35.192.180.25/api/applications/apply`,
       { jobId },
       { headers: { Authorization: `Bearer ${token}` } }
     );

@@ -32,9 +32,9 @@ export default function AdminDashboard() {
       };
 
       const [userRes, jobRes, appRes] = await Promise.all([
-        axios.get('https://35.192.180.25:5000/api/admin/users', { headers }),
-        axios.get('https://35.192.180.25:5000/api/jobs', { headers }),
-        axios.get('https://35.192.180.25:5000/api/admin/applications', { headers }),
+        axios.get('https://35.192.180.25/api/admin/users', { headers }),
+        axios.get('https://35.192.180.25/api/jobs', { headers }),
+        axios.get('https://35.192.180.25/api/admin/applications', { headers }),
       ]);
 
       setUsers(userRes.data);
