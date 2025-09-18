@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://35.192.180.25/api', // Using IP address for now
+  baseURL: 'https://api.ozarx.in/api', // Using domain with proper SSL
   timeout: 10000, // 10 second timeout
   headers: {
     'Content-Type': 'application/json',
