@@ -9,7 +9,7 @@ export default function Reports() {
   const [data, setData] = useState({ newRecruits: 0, dailyApplications: [], statusCounts: {}, range: {} });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://35.192.180.25:5000/api';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://35.192.180.25:5000/api';
 
   
   

@@ -23,7 +23,7 @@ export default function LeadsTable() {
       }
 
       const res = await axios.get(
-        `http://35.192.180.25:5000/api/crm/leads?page=${page}&limit=${limit}`,
+        `https://35.192.180.25:5000/api/crm/leads?page=${page}&limit=${limit}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -55,7 +55,7 @@ export default function LeadsTable() {
         return;
       }
 
-      await axios.delete(`http://35.192.180.25:5000/api/crm/leads/${id}`, {
+      await axios.delete(`https://35.192.180.25:5000/api/crm/leads/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -76,7 +76,7 @@ export default function LeadsTable() {
       }
 
       await axios.put(
-        `http://35.192.180.25:5000/api/crm/leads/${editingLead._id}`,
+        `https://35.192.180.25:5000/api/crm/leads/${editingLead._id}`,
         editingLead,
         {
           headers: {

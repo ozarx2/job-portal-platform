@@ -18,7 +18,7 @@ export default function EmployerDashboard() {
   // 🔁 Fetch employer's jobs
   const fetchJobs = async () => {
     try {
-      const res = await axios.get('http://35.192.180.25:5000/api/jobs/employer', {
+      const res = await axios.get('https://35.192.180.25:5000/api/jobs/employer', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setJobs(res.data.jobs);
@@ -30,7 +30,7 @@ export default function EmployerDashboard() {
   // 🔁 Fetch employer's applications
   const fetchApplications = async () => {
     try {
-      const res = await axios.get('http://35.192.180.25:5000/api/applications/employer', {
+      const res = await axios.get('https://35.192.180.25:5000/api/applications/employer', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setApplications(res.data);
@@ -43,7 +43,7 @@ export default function EmployerDashboard() {
   const postJob = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://35.192.180.25:5000/api/jobs', jobForm, {
+      await axios.post('https://35.192.180.25:5000/api/jobs', jobForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage('Job posted!');
@@ -57,7 +57,7 @@ export default function EmployerDashboard() {
   // 🔁 Update status
   const updateStatus = async (appId, newStatus) => {
     try {
-      await axios.put(`http://35.192.180.25:5000/api/applications/${appId}/status`, {
+      await axios.put(`https://35.192.180.25:5000/api/applications/${appId}/status`, {
         status: newStatus
       }, {
         headers: { Authorization: `Bearer ${token}` }

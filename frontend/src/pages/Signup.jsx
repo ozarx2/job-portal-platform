@@ -26,7 +26,7 @@ export default function Signup() {
     }
 
     try {
-      const res = await axios.post('http://35.192.180.25:5000/api/auth/register', {
+      const res = await axios.post('https://35.192.180.25:5000/api/auth/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,

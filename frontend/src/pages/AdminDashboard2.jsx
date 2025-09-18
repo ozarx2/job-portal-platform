@@ -47,9 +47,9 @@ export default function AdminDashboard() {
       };
 
       const [userRes, jobRes, appRes] = await Promise.all([
-        axios.get('http://35.192.180.25:5000/api/admin/users', { headers }),
-        axios.get('http://35.192.180.25:5000/api/jobs', { headers }),
-        axios.get('http://35.192.180.25:5000/api/admin/applications', { headers }),
+        axios.get('https://35.192.180.25:5000/api/admin/users', { headers }),
+        axios.get('https://35.192.180.25:5000/api/jobs', { headers }),
+        axios.get('https://35.192.180.25:5000/api/admin/applications', { headers }),
       ]);
 
       setUsers(userRes.data);
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
         ...leadFilters
       };
 
-      const response = await axios.get('http://35.192.180.25:5000/api/crm/leads', {
+      const response = await axios.get('https://35.192.180.25:5000/api/crm/leads', {
         headers,
         params
       });
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       await axios.put(
-        `http://35.192.180.25:5000/api/crm/leads/${editingLead._id}`,
+        `https://35.192.180.25:5000/api/crm/leads/${editingLead._id}`,
         editingLead,
         { headers }
       );
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
     
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.delete(`http://35.192.180.25:5000/api/crm/leads/${id}`, { headers });
+      await axios.delete(`https://35.192.180.25:5000/api/crm/leads/${id}`, { headers });
       fetchLeads();
     } catch (err) {
       console.error('Error deleting lead:', err);
