@@ -19,9 +19,9 @@ const LoginForm = () => {
         return '/admin-dashboard';
       case 'employer':
         return '/employer-dashboard';
-      case 'job_seeker':
-      case 'jobseeker':
-        return '/jobseeker-dashboard';
+      
+      case 'candidate':
+        return '/candidate-dashboard';
       case 'agent':
         return '/agent-dashboard';
       case 'hr':
