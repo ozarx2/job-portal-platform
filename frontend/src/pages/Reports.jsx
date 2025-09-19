@@ -306,6 +306,36 @@ export default function Reports() {
             >
               Add Test Data
             </button>
+            <button
+              onClick={async () => {
+                console.log('Testing API endpoint...');
+                try {
+                  const token = localStorage.getItem('token');
+                  const response = await axios.get('https://api.ozarx.in/api/crm/leads', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  console.log('All leads from API:', response.data);
+                  
+                  const shortlisted = response.data.data?.filter(lead => lead.status === 'Shortlisted') || [];
+                  console.log('Shortlisted leads from API:', shortlisted);
+                  
+                  shortlisted.forEach((lead, index) => {
+                    console.log(`API Lead ${index}:`, {
+                      name: lead.name,
+                      companyName: lead.companyName,
+                      jobTitle: lead.jobTitle,
+                      companyId: lead.companyId,
+                      jobId: lead.jobId
+                    });
+                  });
+                } catch (err) {
+                  console.error('API test error:', err);
+                }
+              }}
+              className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
+            >
+              Test API
+            </button>
           </div>
         </div>
         <div className="bg-white rounded shadow p-4">

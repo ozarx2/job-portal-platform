@@ -168,8 +168,12 @@ export default function LeadsTable() {
       };
 
       console.log('Saving lead data:', leadData);
+      console.log('Company ID:', editingLead.companyId);
+      console.log('Company Name:', editingLead.companyName);
+      console.log('Job ID:', editingLead.jobId);
+      console.log('Job Title:', editingLead.jobTitle);
 
-      await axios.put(
+      const response = await axios.put(
         `https://api.ozarx.in/api/crm/leads/${editingLead._id}`,
         leadData,
         {
@@ -178,8 +182,22 @@ export default function LeadsTable() {
           }
         }
       );
+      
+      console.log('Save response:', response.data);
       setEditingLead(null);
-      fetchLeads();
+      
+      // Force refresh of leads data
+      console.log('Refreshing leads data...');
+      await fetchLeads();
+      
+      // Also refresh the leads array to ensure UI updates
+      setLeads(prevLeads => 
+        prevLeads.map(lead => 
+          lead._id === editingLead._id 
+            ? { ...lead, ...leadData }
+            : lead
+        )
+      );
     } catch (err) {
       console.error("Error updating lead:", err);
     }
