@@ -9,6 +9,8 @@ export default function LeadsTable() {
   const [page, setPage] = useState(1);
   const [editingLead, setEditingLead] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [companies, setCompanies] = useState([]);
 
   const limit = 10;
 
@@ -41,8 +43,31 @@ export default function LeadsTable() {
     }
   };
 
+  // Fetch jobs and companies for dropdown
+  const fetchJobsAndCompanies = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const [jobsRes, companiesRes] = await Promise.all([
+        axios.get('https://api.ozarx.in/api/jobs', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        axios.get('https://api.ozarx.in/api/companies', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(() => ({ data: [] })) // Fallback if companies endpoint doesn't exist
+      ]);
+
+      setJobs(jobsRes.data || []);
+      setCompanies(companiesRes.data || []);
+    } catch (err) {
+      console.error("Error fetching jobs and companies:", err);
+    }
+  };
+
   useEffect(() => {
     fetchLeads();
+    fetchJobsAndCompanies();
   }, [page]);
 
   // Delete lead
@@ -75,9 +100,22 @@ export default function LeadsTable() {
         return;
       }
 
+      // Prepare the lead data with company and job information
+      const leadData = {
+        ...editingLead,
+        // If company is selected, get company name
+        companyName: editingLead.companyId ? 
+          companies.find(c => c._id === editingLead.companyId)?.name : 
+          editingLead.companyName,
+        // If job is selected, get job title
+        jobTitle: editingLead.jobId ? 
+          jobs.find(j => j._id === editingLead.jobId)?.title : 
+          editingLead.jobTitle
+      };
+
       await axios.put(
         `https://api.ozarx.in/api/crm/leads/${editingLead._id}`,
-        editingLead,
+        leadData,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -117,6 +155,7 @@ export default function LeadsTable() {
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Phone</th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Location</th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Status</th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Company/Job</th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Actions</th>
           </tr>
         </thead>
@@ -204,6 +243,72 @@ export default function LeadsTable() {
                   }`}>
                     {lead.status}
                   </span>
+                )}
+              </td>
+
+              {/* Company/Job Selection - Only visible when status is Shortlisted */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                {(editingLead && editingLead._id === lead._id && editingLead.status === 'Shortlisted') || 
+                 (lead.status === 'Shortlisted' && !editingLead) ? (
+                  <div className="space-y-2">
+                    {/* Company Selection */}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Company:</label>
+                      <select
+                        value={editingLead?.companyId || lead.companyId || ''}
+                        onChange={(e) => {
+                          if (editingLead && editingLead._id === lead._id) {
+                            setEditingLead({ ...editingLead, companyId: e.target.value });
+                          }
+                        }}
+                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        disabled={!editingLead || editingLead._id !== lead._id}
+                      >
+                        <option value="">Select Company</option>
+                        {companies.map(company => (
+                          <option key={company._id} value={company._id}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Job Selection */}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Job:</label>
+                      <select
+                        value={editingLead?.jobId || lead.jobId || ''}
+                        onChange={(e) => {
+                          if (editingLead && editingLead._id === lead._id) {
+                            setEditingLead({ ...editingLead, jobId: e.target.value });
+                          }
+                        }}
+                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        disabled={!editingLead || editingLead._id !== lead._id}
+                      >
+                        <option value="">Select Job</option>
+                        {jobs.map(job => (
+                          <option key={job._id} value={job._id}>
+                            {job.title} - {job.location}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ) : lead.status === 'Shortlisted' ? (
+                  <div className="text-sm">
+                    {lead.companyName && (
+                      <div className="text-blue-600 font-medium">{lead.companyName}</div>
+                    )}
+                    {lead.jobTitle && (
+                      <div className="text-gray-600">{lead.jobTitle}</div>
+                    )}
+                    {!lead.companyName && !lead.jobTitle && (
+                      <span className="text-gray-400 italic">Not assigned</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-gray-400 italic">-</span>
                 )}
               </td>
 

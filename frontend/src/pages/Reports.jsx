@@ -3,6 +3,103 @@ import axios from 'axios';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 import AdminLayout from '../components/admin/AdminLayout';
 
+// Shortlisted Candidates Table Component
+const ShortlistedCandidatesTable = () => {
+  const [shortlistedLeads, setShortlistedLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchShortlistedLeads();
+  }, []);
+
+  const fetchShortlistedLeads = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await axios.get('https://api.ozarx.in/api/crm/leads?status=Shortlisted', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setShortlistedLeads(response.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching shortlisted leads:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-4">Loading shortlisted candidates...</div>;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agent</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Shortlisted</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {shortlistedLeads.map((lead) => (
+            <tr key={lead._id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {lead.phone}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {lead.location || 'N/A'}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {lead.companyName ? (
+                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    {lead.companyName}
+                  </span>
+                ) : (
+                  <span className="text-gray-400 italic">Not assigned</span>
+                )}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {lead.jobTitle ? (
+                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                    {lead.jobTitle}
+                  </span>
+                ) : (
+                  <span className="text-gray-400 italic">Not assigned</span>
+                )}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {lead.agent?.name || 'N/A'}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {new Date(lead.createdAt).toLocaleDateString()}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      
+      {shortlistedLeads.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          No shortlisted candidates found.
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,6 +151,7 @@ export default function Reports() {
           <a href="#filters" className="px-3 py-2 rounded bg-blue-600 text-white text-sm">Filters</a>
           <a href="#daily" className="px-3 py-2 rounded bg-emerald-600 text-white text-sm">Daily Applications</a>
           <a href="#pipeline" className="px-3 py-2 rounded bg-indigo-600 text-white text-sm">Pipeline</a>
+          <a href="#shortlisted" className="px-3 py-2 rounded bg-purple-600 text-white text-sm">Shortlisted</a>
           <a href="#top" className="px-3 py-2 rounded bg-gray-700 text-white text-sm">Back to top</a>
         </nav>
 
@@ -121,6 +219,14 @@ export default function Reports() {
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">No data</div>
           )}
+        </div>
+      </section>
+
+      {/* Shortlisted Candidates with Company/Job Assignment */}
+      <section id="shortlisted">
+        <h2 className="text-xl font-semibold mb-2">Shortlisted Candidates</h2>
+        <div className="bg-white rounded shadow p-4">
+          <ShortlistedCandidatesTable />
         </div>
       </section>
     </div>
