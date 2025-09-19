@@ -76,12 +76,44 @@ export default function EmployerDashboard() {
       const payload = { status: newStatus };
       console.log('📤 Sending payload:', payload);
       
-      const response = await axios.patch(`https://api.ozarx.in/api/applications/${appId}`, payload, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // Try multiple endpoints to find the correct one
+      let response;
+      let endpointUsed = '';
+      
+      try {
+        // Try 1: CRM leads endpoint
+        endpointUsed = 'CRM Leads';
+        response = await axios.put(`https://api.ozarx.in/api/crm/leads/${appId}`, payload, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (err1) {
+        console.log('CRM leads failed, trying applications...');
+        try {
+          // Try 2: Applications endpoint with PUT
+          endpointUsed = 'Applications PUT';
+          response = await axios.put(`https://api.ozarx.in/api/applications/${appId}`, payload, {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (err2) {
+          console.log('Applications PUT failed, trying PATCH...');
+          // Try 3: Applications endpoint with PATCH
+          endpointUsed = 'Applications PATCH';
+          response = await axios.patch(`https://api.ozarx.in/api/applications/${appId}`, payload, {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
         }
-      });
+      }
+      
+      console.log(`✅ Success using endpoint: ${endpointUsed}`);
       
       console.log('📥 API Response:', response.data);
       
@@ -147,21 +179,46 @@ export default function EmployerDashboard() {
     console.log('🧪 Testing API with:', { appId: testApp._id, status: testStatus });
     
     try {
-      const response = await axios.patch(`https://api.ozarx.in/api/applications/${testApp._id}`, 
-        { status: testStatus }, 
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      let response;
+      let endpointUsed = '';
       
+      try {
+        // Try 1: CRM leads endpoint
+        endpointUsed = 'CRM Leads';
+        response = await axios.put(`https://api.ozarx.in/api/crm/leads/${testApp._id}`, 
+          { status: testStatus }, 
+          {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      } catch (err1) {
+        console.log('🧪 CRM leads failed, trying applications...');
+        try {
+          // Try 2: Applications endpoint
+          endpointUsed = 'Applications';
+          response = await axios.patch(`https://api.ozarx.in/api/applications/${testApp._id}`, 
+            { status: testStatus }, 
+            {
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+        } catch (err2) {
+          throw err2; // Re-throw the last error
+        }
+      }
+      
+      console.log(`🧪 Test successful using endpoint: ${endpointUsed}`);
       console.log('🧪 Test response:', response.data);
-      setMessage('API test successful! Check console for details.');
+      setMessage(`API test successful using ${endpointUsed}! Check console for details.`);
       setMessageType('success');
     } catch (err) {
-      console.error('🧪 Test failed:', err);
+      console.error('🧪 All endpoints failed:', err);
       setMessage(`API test failed: ${err.response?.data?.message || err.message}`);
       setMessageType('error');
     }
