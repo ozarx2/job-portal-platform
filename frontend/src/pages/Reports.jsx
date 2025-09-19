@@ -27,6 +27,16 @@ const ShortlistedCandidatesTable = () => {
       if (response.data.success) {
         setShortlistedLeads(response.data.data);
         console.log('Shortlisted leads set:', response.data.data);
+        // Debug: Check if company/job data exists
+        response.data.data.forEach((lead, index) => {
+          console.log(`Lead ${index}:`, {
+            name: lead.name,
+            companyName: lead.companyName,
+            jobTitle: lead.jobTitle,
+            companyId: lead.companyId,
+            jobId: lead.jobId
+          });
+        });
       } else {
         // Try fetching all leads and filter client-side
         const allLeadsResponse = await axios.get('https://api.ozarx.in/api/crm/leads', {
@@ -37,6 +47,16 @@ const ShortlistedCandidatesTable = () => {
           const shortlisted = allLeadsResponse.data.data.filter(lead => lead.status === 'Shortlisted');
           setShortlistedLeads(shortlisted);
           console.log('Filtered shortlisted leads:', shortlisted);
+          // Debug: Check if company/job data exists in filtered leads
+          shortlisted.forEach((lead, index) => {
+            console.log(`Filtered Lead ${index}:`, {
+              name: lead.name,
+              companyName: lead.companyName,
+              jobTitle: lead.jobTitle,
+              companyId: lead.companyId,
+              jobId: lead.jobId
+            });
+          });
         }
       }
     } catch (err) {
@@ -258,12 +278,8 @@ export default function Reports() {
           <div className="flex space-x-2">
             <button
               onClick={() => {
-                const table = document.querySelector('#shortlisted-table');
-                if (table) {
-                  const component = table.__reactInternalInstance || table._reactInternalFiber;
-                  // Force re-render by updating state
-                  window.location.reload();
-                }
+                console.log('Manually refreshing shortlisted leads...');
+                fetchShortlistedLeads();
               }}
               className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
             >
@@ -274,6 +290,21 @@ export default function Reports() {
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
             >
               Refresh All Data
+            </button>
+            <button
+              onClick={() => {
+                console.log('Adding test company/job data...');
+                setShortlistedLeads(prev => prev.map(lead => ({
+                  ...lead,
+                  companyName: lead.companyName || 'Test Company',
+                  jobTitle: lead.jobTitle || 'Test Job',
+                  companyId: lead.companyId || 'test-company-id',
+                  jobId: lead.jobId || 'test-job-id'
+                })));
+              }}
+              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm"
+            >
+              Add Test Data
             </button>
           </div>
         </div>
