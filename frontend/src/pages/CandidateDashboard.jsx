@@ -48,25 +48,32 @@ export default function CandidateDashboard() {
   const fetchJobs = async () => {
     try {
       const res = await axios.get('https://api.ozarx.in/api/jobs');
-      setJobs(res.data); // <-- directly set data
+      setJobs(res.data || []);
     } catch (err) {
       console.error('Error fetching jobs:', err.message);
     }
   };
-  
 
   const fetchApplications = async () => {
-    const res = await axios.get('https://api.ozarx.in/api/applications/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setApplications(res.data || []);
+    try {
+      const res = await axios.get('https://api.ozarx.in/api/applications/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setApplications(res.data || []);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    }
   };
 
   const fetchProfile = async () => {
-    const res = await axios.get('https://api.ozarx.in/api/auth/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setProfile(res.data.user);
+    try {
+      const res = await axios.get('https://api.ozarx.in/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProfile(res.data.user || {});
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
   };
 
   const fetchSelectedJobs = async () => {
@@ -331,107 +338,396 @@ export default function CandidateDashboard() {
           </div>
         )}
 
-      {/* Available Jobs */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Available Jobs</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {jobs.map((job) => (
-            <div key={job._id} className="border p-4 rounded-xl shadow-sm bg-white">
-              <h3 className="text-lg font-semibold">{job.title}</h3>
-              <p>{job.description}</p>
-              <p className="text-sm text-gray-500">{job.location}</p>
-              <button
-                onClick={() => applyJob(job._id)}
-                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Apply Now
-              </button>
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Applications</h3>
+                <p className="text-3xl font-bold text-blue-600">{applications.length}</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Selected Jobs</h3>
+                <p className="text-3xl font-bold text-green-600">{selectedJobs.length}</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Available Jobs</h3>
+                <p className="text-3xl font-bold text-purple-600">{jobs.length}</p>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Profile Update */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Update Profile</h2>
-        <form onSubmit={updateProfile} className="space-y-4 bg-white p-6 rounded-xl shadow-sm">
-          <input
-            type="text"
-            name="name"
-            value={profile.name}
-            onChange={handleProfileChange}
-            placeholder="Name"
-            className="w-full border p-2 rounded"
-            required
-          />
-          <input
-            type="email"
-            name="email"
-            value={profile.email}
-            onChange={handleProfileChange}
-            placeholder="Email"
-            className="w-full border p-2 rounded"
-            required
-          />
-          <input
-            type="text"
-            name="phone"
-            value={profile.phone || ''}
-            onChange={handleProfileChange}
-            placeholder="Phone"
-            className="w-full border p-2 rounded"
-          />
-          <input
-            type="file"
-            onChange={handleProfileImageChange}
-            accept="image/*"
-            className="w-full"
-          />
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Save Profile
-          </button>
-        </form>
-      </section>
+            {selectedJobs.length > 0 && (
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected for Onboarding</h3>
+                <div className="space-y-3">
+                  {selectedJobs.map((job) => (
+                    <div key={job._id} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <div>
+                        <h4 className="font-medium text-gray-900">{job.title}</h4>
+                        <p className="text-sm text-gray-600">{job.company}</p>
+                      </div>
+                      <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+                        Selected
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-      {/* Resume Upload */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Upload Resume</h2>
-        <div className="flex gap-4 items-center">
-          <input type="file" accept=".pdf" onChange={handleResumeUpload} />
-          <button
-            onClick={uploadResume}
-            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-          >
-            Upload
-          </button>
-        </div>
-      </section>
+        {/* Jobs Tab */}
+        {activeTab === 'jobs' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Available Jobs</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {jobs.map((job) => (
+                <div key={job._id} className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{job.title}</h3>
+                  <p className="text-gray-600 mb-3 line-clamp-3">{job.description}</p>
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm text-gray-500"><strong>Company:</strong> {job.company}</p>
+                    <p className="text-sm text-gray-500"><strong>Salary:</strong> {job.salary}</p>
+                    <p className="text-sm text-gray-500"><strong>Location:</strong> {job.location}</p>
+                  </div>
+                  <button
+                    onClick={() => applyJob(job._id)}
+                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Apply Now
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* Application Status */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Your Applications</h2>
-        <table className="w-full text-left border-collapse bg-white shadow-sm">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-3">Job</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Date Applied</th>
-            </tr>
-          </thead>
-          <tbody>
-            {applications.map((app) => (
-              <tr key={app._id} className="border-t">
-                <td className="p-3">{app.job?.title || 'N/A'}</td>
-                <td className="p-3">{app.status}</td>
-                <td className="p-3">{new Date(app.createdAt).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+        {/* Applications Tab */}
+        {activeTab === 'applications' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">My Applications</h2>
+            <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Applied</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {applications.map((app) => (
+                    <tr key={app._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{app.job?.title || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {app.job?.company || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          app.status === 'selected' ? 'bg-green-100 text-green-800' :
+                          app.status === 'shortlisted' ? 'bg-blue-100 text-blue-800' :
+                          app.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {app.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(app.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Onboarding Tab */}
+        {activeTab === 'onboarding' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Onboarding Process</h2>
+            
+            {selectedJobs.length === 0 ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">No Selected Jobs</h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <p>You need to be selected for a job before you can start the onboarding process.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={submitOnboarding} className="space-y-8">
+                {/* Job Selection */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Job for Onboarding</h3>
+                  <select
+                    value={onboardingData.selectedJobId}
+                    onChange={(e) => handleOnboardingChange('selectedJobId', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Select a job</option>
+                    {selectedJobs.map((job) => (
+                      <option key={job._id} value={job._id}>
+                        {job.title} - {job.company}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Personal Information */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                      <input
+                        type="text"
+                        value={onboardingData.personalInfo.fullName}
+                        onChange={(e) => handleOnboardingChange('personalInfo.fullName', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                      <input
+                        type="date"
+                        value={onboardingData.personalInfo.dateOfBirth}
+                        onChange={(e) => handleOnboardingChange('personalInfo.dateOfBirth', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                      <textarea
+                        value={onboardingData.personalInfo.address}
+                        onChange={(e) => handleOnboardingChange('personalInfo.address', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows={3}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact</label>
+                      <input
+                        type="text"
+                        value={onboardingData.personalInfo.emergencyContact}
+                        onChange={(e) => handleOnboardingChange('personalInfo.emergencyContact', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Blood Group</label>
+                      <select
+                        value={onboardingData.personalInfo.bloodGroup}
+                        onChange={(e) => handleOnboardingChange('personalInfo.bloodGroup', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Document Uploads */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Required Documents</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Aadhar Card */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Aadhar Card</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload('aadharCard', e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {/* PAN Card */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">PAN Card</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload('panCard', e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {/* Resume */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Resume</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => handleDocumentUpload('resume', e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {/* Marklist */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Marklist/Transcript</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload('marklist', e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {/* Bank Passbook */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Bank Passbook</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload('bankPassbook', e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {/* Passport Photo */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Passport Size Photo</label>
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload('passportPhoto', e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                  >
+                    Submit Onboarding Documents
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Profile Management</h2>
+            
+            {/* Profile Update */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Profile</h3>
+              <form onSubmit={updateProfile} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={profile.name}
+                      onChange={handleProfileChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={profile.email}
+                      onChange={handleProfileChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={profile.phone || ''}
+                      onChange={handleProfileChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
+                    <input
+                      type="file"
+                      onChange={handleProfileImageChange}
+                      accept="image/*"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Save Profile
+                </button>
+              </form>
+            </div>
+
+            {/* Resume Upload */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Resume</h3>
+              <div className="flex gap-4 items-center">
+                <input 
+                  type="file" 
+                  accept=".pdf" 
+                  onChange={handleResumeUpload}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={uploadResume}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Upload Resume
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
