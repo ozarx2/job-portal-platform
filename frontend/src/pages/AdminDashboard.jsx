@@ -3,6 +3,9 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import { Modal, Box, Button } from '@mui/material';
 import AdminLayout from '../components/admin/AdminLayout';
+import UserManagement from '../components/admin/UserManagement';
+import RoleManagement from '../components/admin/RoleManagement';
+import UserAnalytics from '../components/admin/UserAnalytics';
 
 export default function AdminDashboard() {
   const token = localStorage.getItem('token');
@@ -162,49 +165,36 @@ export default function AdminDashboard() {
     <AdminLayout title={`Welcome, ${adminName}`}>
       <div className="space-y-12" id="top">
         <nav className="flex flex-wrap gap-2 mb-2">
-          <button onClick={() => setActiveTab('users')} className={`px-3 py-2 rounded text-sm ${activeTab==='users' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700'}`}>Users</button>
+          <button onClick={() => setActiveTab('users')} className={`px-3 py-2 rounded text-sm ${activeTab==='users' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700'}`}>User Management</button>
+          <button onClick={() => setActiveTab('roles')} className={`px-3 py-2 rounded text-sm ${activeTab==='roles' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700'}`}>Role Management</button>
+          <button onClick={() => setActiveTab('analytics')} className={`px-3 py-2 rounded text-sm ${activeTab==='analytics' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700'}`}>User Analytics</button>
           <button onClick={() => setActiveTab('jobs')} className={`px-3 py-2 rounded text-sm ${activeTab==='jobs' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700'}`}>Jobs</button>
           <button onClick={() => setActiveTab('applications')} className={`px-3 py-2 rounded text-sm ${activeTab==='applications' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'}`}>Applications</button>
           <button onClick={() => setActiveTab('leads')} className={`px-3 py-2 rounded text-sm ${activeTab==='leads' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700'}`}>Leads ({leadsTotal})</button>
           <button onClick={() => setActiveTab('crm-dashboard')} className={`px-3 py-2 rounded text-sm ${activeTab==='crm-dashboard' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700'}`}>CRM Analytics</button>
         </nav>
 
-        {/* Users */}
+        {/* User Management */}
         {activeTab === 'users' && (
-        <section id="users">
-          <h2 className="text-xl font-semibold mb-4 text-blue-700">All Users</h2>
-          <div className="overflow-x-auto bg-white shadow-md rounded-lg">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-200">
-                <tr>
-                  <th className="p-3 text-left w-12">#</th>
-                  <th className="p-3 text-left">Name</th>
-                  <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">Role</th>
-                  <th className="p-3 text-left">ID</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(showAllUsers ? users : users.slice(0, 5)).map((user, idx) => (
-                  <tr key={user._id} className="border-t hover:bg-gray-50">
-                    <td className="p-3">{idx + 1}</td>
-                    <td className="p-3">{user.name}</td>
-                    <td className="p-3">{user.email}</td>
-                    <td className="p-3 capitalize">{user.role}</td>
-                    <td className="p-3 font-mono text-xs">{user._id}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {users.length > 5 && (
-            <div className="mt-3">
-              <button className="px-3 py-2 text-sm rounded bg-blue-50 text-blue-700 hover:bg-blue-100" onClick={() => setShowAllUsers(v => !v)}>
-                {showAllUsers ? 'Show less' : 'See more'}
-              </button>
-            </div>
-          )}
-        </section>
+          <UserManagement 
+            token={token} 
+            onUserUpdate={fetchAllData}
+          />
+        )}
+
+        {/* Role Management */}
+        {activeTab === 'roles' && (
+          <RoleManagement 
+            token={token}
+          />
+        )}
+
+        {/* User Analytics */}
+        {activeTab === 'analytics' && (
+          <UserAnalytics 
+            token={token}
+            users={users}
+          />
         )}
 
         {/* Jobs */}

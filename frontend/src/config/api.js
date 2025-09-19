@@ -24,6 +24,9 @@ export const API_ENDPOINTS = {
   // Admin endpoints
   ADMIN_USERS: `${API_BASE_URL}/admin/users`,
   ADMIN_APPLICATIONS: `${API_BASE_URL}/admin/applications`,
+  ADMIN_CREATE_USER: `${API_BASE_URL}/admin/users`,
+  ADMIN_UPDATE_USER: `${API_BASE_URL}/admin/users`,
+  ADMIN_DELETE_USER: `${API_BASE_URL}/admin/users`,
 };
 
 export default API_ENDPOINTS; 
