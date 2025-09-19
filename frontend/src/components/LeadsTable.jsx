@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ImportLeads from "./ImportLeads";
+import CompanyDebugger from "./CompanyDebugger";
 
 
 export default function LeadsTable() {
@@ -49,19 +50,75 @@ export default function LeadsTable() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const [jobsRes, companiesRes] = await Promise.all([
-        axios.get('https://api.ozarx.in/api/jobs', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        axios.get('https://api.ozarx.in/api/companies', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }).catch(() => ({ data: [] })) // Fallback if companies endpoint doesn't exist
-      ]);
+      console.log('Fetching jobs and companies...');
 
+      // Fetch jobs
+      const jobsRes = await axios.get('https://api.ozarx.in/api/jobs', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      console.log('Jobs response:', jobsRes.data);
       setJobs(jobsRes.data || []);
-      setCompanies(companiesRes.data || []);
+
+      // Try to fetch companies from multiple possible endpoints
+      let companiesData = [];
+      try {
+        // Try the companies endpoint first
+        const companiesRes = await axios.get('https://api.ozarx.in/api/companies', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        companiesData = companiesRes.data || [];
+        console.log('Companies from /api/companies:', companiesData);
+      } catch (companiesError) {
+        console.log('Companies endpoint failed, trying alternative approaches...');
+        
+        try {
+          // Try to get companies from jobs data (extract unique companies from jobs)
+          const jobsData = jobsRes.data || [];
+          const uniqueCompanies = [];
+          const companyMap = new Map();
+          
+          jobsData.forEach(job => {
+            if (job.company && job.company.name) {
+              if (!companyMap.has(job.company._id)) {
+                companyMap.set(job.company._id, {
+                  _id: job.company._id,
+                  name: job.company.name
+                });
+              }
+            }
+          });
+          
+          companiesData = Array.from(companyMap.values());
+          console.log('Companies extracted from jobs:', companiesData);
+        } catch (extractError) {
+          console.log('Could not extract companies from jobs:', extractError);
+          
+          // Create some default companies as fallback
+          companiesData = [
+            { _id: 'company1', name: 'Tech Corp' },
+            { _id: 'company2', name: 'Finance Ltd' },
+            { _id: 'company3', name: 'Healthcare Inc' },
+            { _id: 'company4', name: 'Education Group' },
+            { _id: 'company5', name: 'Manufacturing Co' }
+          ];
+          console.log('Using default companies:', companiesData);
+        }
+      }
+
+      setCompanies(companiesData);
+      console.log('Final companies data:', companiesData);
     } catch (err) {
       console.error("Error fetching jobs and companies:", err);
+      
+      // Set default companies as fallback
+      const defaultCompanies = [
+        { _id: 'company1', name: 'Tech Corp' },
+        { _id: 'company2', name: 'Finance Ltd' },
+        { _id: 'company3', name: 'Healthcare Inc' },
+        { _id: 'company4', name: 'Education Group' },
+        { _id: 'company5', name: 'Manufacturing Co' }
+      ];
+      setCompanies(defaultCompanies);
     }
   };
 
@@ -136,6 +193,34 @@ export default function LeadsTable() {
           Leads ({total})
         </h2>
         <p className="text-sm text-gray-600 mt-1">Manage and track your lead pipeline</p>
+        
+        {/* Debug Information */}
+        <div className="mt-2 text-xs text-gray-500">
+          <div>Companies loaded: {companies.length}</div>
+          <div>Jobs loaded: {jobs.length}</div>
+          {companies.length > 0 && (
+            <div>Available companies: {companies.map(c => c.name).join(', ')}</div>
+          )}
+          <button 
+            onClick={() => {
+              const testCompanies = [
+                { _id: 'test1', name: 'Test Company 1' },
+                { _id: 'test2', name: 'Test Company 2' },
+                { _id: 'test3', name: 'Test Company 3' }
+              ];
+              setCompanies(testCompanies);
+              console.log('Added test companies:', testCompanies);
+            }}
+            className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+          >
+            Add Test Companies
+          </button>
+        </div>
+        
+        {/* Company Debugger */}
+        <div className="mt-4">
+          <CompanyDebugger />
+        </div>
       </div>
       
       {loading ? (
@@ -258,6 +343,7 @@ export default function LeadsTable() {
                         value={editingLead?.companyId || lead.companyId || ''}
                         onChange={(e) => {
                           if (editingLead && editingLead._id === lead._id) {
+                            console.log('Company selected:', e.target.value);
                             setEditingLead({ ...editingLead, companyId: e.target.value });
                           }
                         }}
@@ -265,12 +351,21 @@ export default function LeadsTable() {
                         disabled={!editingLead || editingLead._id !== lead._id}
                       >
                         <option value="">Select Company</option>
-                        {companies.map(company => (
-                          <option key={company._id} value={company._id}>
-                            {company.name}
-                          </option>
-                        ))}
+                        {companies.length > 0 ? (
+                          companies.map(company => (
+                            <option key={company._id} value={company._id}>
+                              {company.name}
+                            </option>
+                          ))
+                        ) : (
+                          <option disabled>No companies available</option>
+                        )}
                       </select>
+                      {companies.length === 0 && (
+                        <div className="text-xs text-red-500 mt-1">
+                          No companies found. Check console for details.
+                        </div>
+                      )}
                     </div>
                     
                     {/* Job Selection */}

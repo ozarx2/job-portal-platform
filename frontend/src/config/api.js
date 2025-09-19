@@ -11,6 +11,9 @@ export const API_ENDPOINTS = {
   JOBS: `${API_BASE_URL}/jobs`,
   EMPLOYER_JOBS: `${API_BASE_URL}/jobs/employer`,
   
+  // Company endpoints
+  COMPANIES: `${API_BASE_URL}/companies`,
+  
   // Application endpoints
   APPLICATIONS: `${API_BASE_URL}/applications`,
   APPLY: `${API_BASE_URL}/applications/apply`,
