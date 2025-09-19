@@ -118,6 +118,7 @@ const ShortlistedCandidatesTable = () => {
           ))}
         </tbody>
       </table>
+      </div>
       
       {shortlistedLeads.length === 0 && (
         <div className="text-center py-8 text-gray-500">
