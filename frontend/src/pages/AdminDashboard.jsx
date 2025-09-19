@@ -6,6 +6,8 @@ import AdminLayout from '../components/admin/AdminLayout';
 import UserManagement from '../components/admin/UserManagement';
 import RoleManagement from '../components/admin/RoleManagement';
 import UserAnalytics from '../components/admin/UserAnalytics';
+import JobPosting from '../components/admin/JobPosting';
+import JobManagement from '../components/admin/JobManagement';
 
 export default function AdminDashboard() {
   const token = localStorage.getItem('token');
@@ -168,6 +170,8 @@ export default function AdminDashboard() {
           <button onClick={() => setActiveTab('users')} className={`px-3 py-2 rounded text-sm ${activeTab==='users' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700'}`}>User Management</button>
           <button onClick={() => setActiveTab('roles')} className={`px-3 py-2 rounded text-sm ${activeTab==='roles' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700'}`}>Role Management</button>
           <button onClick={() => setActiveTab('analytics')} className={`px-3 py-2 rounded text-sm ${activeTab==='analytics' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700'}`}>User Analytics</button>
+          <button onClick={() => setActiveTab('job-posting')} className={`px-3 py-2 rounded text-sm ${activeTab==='job-posting' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700'}`}>Post Job</button>
+          <button onClick={() => setActiveTab('job-management')} className={`px-3 py-2 rounded text-sm ${activeTab==='job-management' ? 'bg-teal-600 text-white' : 'bg-teal-50 text-teal-700'}`}>Manage Jobs</button>
           <button onClick={() => setActiveTab('jobs')} className={`px-3 py-2 rounded text-sm ${activeTab==='jobs' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700'}`}>Jobs</button>
           <button onClick={() => setActiveTab('applications')} className={`px-3 py-2 rounded text-sm ${activeTab==='applications' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'}`}>Applications</button>
           <button onClick={() => setActiveTab('leads')} className={`px-3 py-2 rounded text-sm ${activeTab==='leads' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700'}`}>Leads ({leadsTotal})</button>
@@ -195,6 +199,16 @@ export default function AdminDashboard() {
             token={token}
             users={users}
           />
+        )}
+
+        {/* Job Posting */}
+        {activeTab === 'job-posting' && (
+          <JobPosting />
+        )}
+
+        {/* Job Management */}
+        {activeTab === 'job-management' && (
+          <JobManagement />
         )}
 
         {/* Jobs */}

@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 export default function CandidateDashboard() {
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [selectedJobs, setSelectedJobs] = useState([]);
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -12,6 +14,27 @@ export default function CandidateDashboard() {
   });
   const [resumeFile, setResumeFile] = useState(null);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
+
+  // Onboarding documents state
+  const [onboardingData, setOnboardingData] = useState({
+    selectedJobId: '',
+    documents: {
+      aadharCard: null,
+      panCard: null,
+      resume: null,
+      marklist: null,
+      bankPassbook: null,
+      passportPhoto: null
+    },
+    personalInfo: {
+      fullName: '',
+      dateOfBirth: '',
+      address: '',
+      emergencyContact: '',
+      bloodGroup: ''
+    }
+  });
 
   const token = localStorage.getItem('token');
 
@@ -19,6 +42,7 @@ export default function CandidateDashboard() {
     fetchJobs();
     fetchApplications();
     fetchProfile();
+    fetchSelectedJobs();
   }, []);
 
   const fetchJobs = async () => {
@@ -45,6 +69,17 @@ export default function CandidateDashboard() {
     setProfile(res.data.user);
   };
 
+  const fetchSelectedJobs = async () => {
+    try {
+      const res = await axios.get('https://api.ozarx.in/api/applications/selected', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSelectedJobs(res.data || []);
+    } catch (error) {
+      console.error('Error fetching selected jobs:', error);
+    }
+  };
+
   const handleProfileChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
@@ -59,51 +94,242 @@ export default function CandidateDashboard() {
 
   const updateProfile = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append('name', profile.name);
-    formData.append('email', profile.email);
-    formData.append('phone', profile.phone);
-    if (profile.image) formData.append('image', profile.image);
+    try {
+      const formData = new FormData();
+      formData.append('name', profile.name);
+      formData.append('email', profile.email);
+      formData.append('phone', profile.phone);
+      if (profile.image) formData.append('image', profile.image);
 
-    await axios.put('https://api.ozarx.in/api/users/update', formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+      await axios.put('https://api.ozarx.in/api/users/update', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-    setMessage('Profile updated successfully!');
+      setMessage('Profile updated successfully!');
+      setMessageType('success');
+    } catch (error) {
+      setMessage('Failed to update profile');
+      setMessageType('error');
+    }
   };
 
   const uploadResume = async () => {
-    const formData = new FormData();
-    formData.append('resume', resumeFile);
+    try {
+      const formData = new FormData();
+      formData.append('resume', resumeFile);
 
-    await axios.post('https://api.ozarx.in/api/users/resume', formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+      await axios.post('https://api.ozarx.in/api/users/resume', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-    setMessage('Resume uploaded successfully!');
+      setMessage('Resume uploaded successfully!');
+      setMessageType('success');
+    } catch (error) {
+      setMessage('Failed to upload resume');
+      setMessageType('error');
+    }
   };
 
   const applyJob = async (jobId) => {
-    await axios.post(
-      `https://api.ozarx.in/api/applications/apply`,
-      { jobId },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setMessage('Application submitted!');
-    fetchApplications();
+    try {
+      await axios.post(
+        `https://api.ozarx.in/api/applications/apply`,
+        { jobId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMessage('Application submitted!');
+      setMessageType('success');
+      fetchApplications();
+    } catch (error) {
+      setMessage('Failed to submit application');
+      setMessageType('error');
+    }
+  };
+
+  // Onboarding functions
+  const handleOnboardingChange = (field, value) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setOnboardingData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setOnboardingData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
+  const handleDocumentUpload = (documentType, file) => {
+    setOnboardingData(prev => ({
+      ...prev,
+      documents: {
+        ...prev.documents,
+        [documentType]: file
+      }
+    }));
+  };
+
+  const submitOnboarding = async (e) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append('selectedJobId', onboardingData.selectedJobId);
+      formData.append('personalInfo', JSON.stringify(onboardingData.personalInfo));
+      
+      // Append all documents
+      Object.entries(onboardingData.documents).forEach(([key, file]) => {
+        if (file) {
+          formData.append(key, file);
+        }
+      });
+
+      await axios.post('https://api.ozarx.in/api/onboarding/submit', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setMessage('Onboarding documents submitted successfully!');
+      setMessageType('success');
+      
+      // Reset form
+      setOnboardingData({
+        selectedJobId: '',
+        documents: {
+          aadharCard: null,
+          panCard: null,
+          resume: null,
+          marklist: null,
+          bankPassbook: null,
+          passportPhoto: null
+        },
+        personalInfo: {
+          fullName: '',
+          dateOfBirth: '',
+          address: '',
+          emergencyContact: '',
+          bloodGroup: ''
+        }
+      });
+    } catch (error) {
+      setMessage('Failed to submit onboarding documents');
+      setMessageType('error');
+    }
+  };
+
+  const clearMessage = () => {
+    setMessage('');
+    setMessageType('');
   };
 
   return (
-    <div className="p-8 space-y-12 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Candidate Dashboard</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Candidate Dashboard</h1>
+              <p className="text-gray-600">Welcome back, {profile.name || 'Candidate'}</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-500">
+                {applications.length} Applications
+              </div>
+              <div className="text-sm text-gray-500">
+                {selectedJobs.length} Selected
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {message && <p className="text-green-600">{message}</p>}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Navigation */}
+        <nav className="flex flex-wrap gap-2 mb-8">
+          <button 
+            onClick={() => setActiveTab('dashboard')} 
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'dashboard' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button 
+            onClick={() => setActiveTab('jobs')} 
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'jobs' 
+                ? 'bg-green-600 text-white' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+            }`}
+          >
+            Available Jobs
+          </button>
+          <button 
+            onClick={() => setActiveTab('applications')} 
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'applications' 
+                ? 'bg-purple-600 text-white' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+            }`}
+          >
+            My Applications
+          </button>
+          <button 
+            onClick={() => setActiveTab('onboarding')} 
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'onboarding' 
+                ? 'bg-orange-600 text-white' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+            }`}
+          >
+            Onboarding
+          </button>
+          <button 
+            onClick={() => setActiveTab('profile')} 
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'profile' 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+            }`}
+          >
+            Profile
+          </button>
+        </nav>
+
+        {/* Message Display */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            messageType === 'success' 
+              ? 'bg-green-50 border border-green-200 text-green-800' 
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}>
+            <div className="flex justify-between items-center">
+              <span>{message}</span>
+              <button 
+                onClick={clearMessage}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
       {/* Available Jobs */}
       <section>

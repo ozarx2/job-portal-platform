@@ -11,7 +11,6 @@ export default function LeadsTable() {
   const [editingLead, setEditingLead] = useState(null);
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState([]);
-  const [companies, setCompanies] = useState([]);
 
   const limit = 10;
 
@@ -44,13 +43,13 @@ export default function LeadsTable() {
     }
   };
 
-  // Fetch jobs and companies for dropdown
-  const fetchJobsAndCompanies = async () => {
+  // Fetch jobs for dropdown
+  const fetchJobs = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      console.log('Fetching jobs and companies...');
+      console.log('Fetching jobs...');
 
       // Fetch jobs
       const jobsRes = await axios.get('https://api.ozarx.in/api/jobs', {
@@ -58,73 +57,15 @@ export default function LeadsTable() {
       });
       console.log('Jobs response:', jobsRes.data);
       setJobs(jobsRes.data || []);
-
-      // Try to fetch companies from multiple possible endpoints
-      let companiesData = [];
-      try {
-        // Try the companies endpoint first
-        const companiesRes = await axios.get('https://api.ozarx.in/api/companies', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        companiesData = companiesRes.data || [];
-        console.log('Companies from /api/companies:', companiesData);
-      } catch (companiesError) {
-        console.log('Companies endpoint failed, trying alternative approaches...');
-        
-        try {
-          // Try to get companies from jobs data (extract unique companies from jobs)
-          const jobsData = jobsRes.data || [];
-          const uniqueCompanies = [];
-          const companyMap = new Map();
-          
-          jobsData.forEach(job => {
-            if (job.company && job.company.name) {
-              if (!companyMap.has(job.company._id)) {
-                companyMap.set(job.company._id, {
-                  _id: job.company._id,
-                  name: job.company.name
-                });
-              }
-            }
-          });
-          
-          companiesData = Array.from(companyMap.values());
-          console.log('Companies extracted from jobs:', companiesData);
-        } catch (extractError) {
-          console.log('Could not extract companies from jobs:', extractError);
-          
-          // Create some default companies as fallback
-          companiesData = [
-            { _id: 'company1', name: 'Tech Corp' },
-            { _id: 'company2', name: 'Finance Ltd' },
-            { _id: 'company3', name: 'Healthcare Inc' },
-            { _id: 'company4', name: 'Education Group' },
-            { _id: 'company5', name: 'Manufacturing Co' }
-          ];
-          console.log('Using default companies:', companiesData);
-        }
-      }
-
-      setCompanies(companiesData);
-      console.log('Final companies data:', companiesData);
+      console.log('Jobs loaded:', jobsRes.data?.length || 0);
     } catch (err) {
-      console.error("Error fetching jobs and companies:", err);
-      
-      // Set default companies as fallback
-      const defaultCompanies = [
-        { _id: 'company1', name: 'Tech Corp' },
-        { _id: 'company2', name: 'Finance Ltd' },
-        { _id: 'company3', name: 'Healthcare Inc' },
-        { _id: 'company4', name: 'Education Group' },
-        { _id: 'company5', name: 'Manufacturing Co' }
-      ];
-      setCompanies(defaultCompanies);
+      console.error("Error fetching jobs:", err);
     }
   };
 
   useEffect(() => {
     fetchLeads();
-    fetchJobsAndCompanies();
+    fetchJobs();
   }, [page]);
 
   // Delete lead
@@ -165,17 +106,14 @@ export default function LeadsTable() {
         saveButton.className = saveButton.className.replace('bg-green-600', 'bg-gray-400');
       }
 
-      // Prepare the lead data with company and job information
-      const selectedCompany = companies.find(c => c._id === editingLead.companyId);
+      // Prepare the lead data with job information only
       const selectedJob = jobs.find(j => j._id === editingLead.jobId);
       
       const leadData = {
         ...editingLead,
-        // Ensure company and job names are properly set
-        companyName: editingLead.companyName || selectedCompany?.name || '',
+        // Ensure job name is properly set
         jobTitle: editingLead.jobTitle || selectedJob?.title || '',
-        // Also include the IDs for reference
-        companyId: editingLead.companyId || '',
+        // Include the job ID for reference
         jobId: editingLead.jobId || '',
         // Update the status to reflect the assignment
         status: editingLead.status,
@@ -184,8 +122,6 @@ export default function LeadsTable() {
       };
 
       console.log('Saving lead data:', leadData);
-      console.log('Company ID:', editingLead.companyId);
-      console.log('Company Name:', editingLead.companyName);
       console.log('Job ID:', editingLead.jobId);
       console.log('Job Title:', editingLead.jobTitle);
 
@@ -206,26 +142,26 @@ export default function LeadsTable() {
         console.log('✅ Lead updated successfully in database');
         console.log('Updated lead data:', response.data.data);
         
-        // Check if company/job data is present in the response
-        if (response.data.data.companyName || response.data.data.jobTitle) {
-          console.log('✅ Company/Job data confirmed in database');
+        // Check if job data is present in the response
+        if (response.data.data.jobTitle) {
+          console.log('✅ Job data confirmed in database');
           
           // Show success notification
           const notification = document.createElement('div');
           notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-          notification.textContent = '✅ Company and Job assigned successfully!';
+          notification.textContent = '✅ Job assigned successfully!';
           document.body.appendChild(notification);
           
           setTimeout(() => {
             notification.remove();
           }, 3000);
         } else {
-          console.log('⚠️ Company/Job data may not be saved correctly');
+          console.log('⚠️ Job data may not be saved correctly');
           
           // Show warning notification
           const notification = document.createElement('div');
           notification.className = 'fixed top-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded shadow-lg z-50';
-          notification.textContent = '⚠️ Assignment may not be saved correctly';
+          notification.textContent = '⚠️ Job assignment may not be saved correctly';
           document.body.appendChild(notification);
           
           setTimeout(() => {
@@ -239,7 +175,7 @@ export default function LeadsTable() {
         // Show error notification
         const notification = document.createElement('div');
         notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
-        notification.textContent = '❌ Failed to save assignment';
+        notification.textContent = '❌ Failed to save job assignment';
         document.body.appendChild(notification);
         
         setTimeout(() => {
@@ -290,31 +226,12 @@ export default function LeadsTable() {
         
         {/* Debug Information */}
         <div className="mt-2 text-xs text-gray-500">
-          <div>Companies loaded: {companies.length}</div>
           <div>Jobs loaded: {jobs.length}</div>
-          {companies.length > 0 && (
-            <div>Available companies: {companies.map(c => c.name).join(', ')}</div>
+          {jobs.length > 0 && (
+            <div>Available jobs: {jobs.map(j => j.title).join(', ')}</div>
           )}
-          <button 
-            onClick={() => {
-              const testCompanies = [
-                { _id: 'test1', name: 'Test Company 1' },
-                { _id: 'test2', name: 'Test Company 2' },
-                { _id: 'test3', name: 'Test Company 3' }
-              ];
-              setCompanies(testCompanies);
-              console.log('Added test companies:', testCompanies);
-            }}
-            className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
-          >
-            Add Test Companies
-          </button>
         </div>
         
-        {/* Company Debugger */}
-        <div className="mt-4">
-          <CompanyDebugger />
-        </div>
       </div>
       
       {loading ? (
@@ -334,7 +251,7 @@ export default function LeadsTable() {
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Phone</th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Location</th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Status</th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Company/Job</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Job Assignment</th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Actions</th>
           </tr>
         </thead>
@@ -425,73 +342,11 @@ export default function LeadsTable() {
                 )}
               </td>
 
-              {/* Company/Job Selection - Only visible when status is Shortlisted */}
+              {/* Job Selection - Only visible when status is Shortlisted */}
               <td className="px-6 py-4 whitespace-nowrap">
                 {(editingLead && editingLead._id === lead._id && editingLead.status === 'Shortlisted') || 
                  (lead.status === 'Shortlisted' && !editingLead) ? (
-                  <div className="space-y-2">
-                    {/* Company Selection */}
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">
-                        <div className="flex items-center space-x-2">
-                          <span>Company:</span>
-                          {editingLead && editingLead._id === lead._id && editingLead.companyName && (
-                            <span className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                              ✓ {editingLead.companyName}
-                            </span>
-                          )}
-                        </div>
-                      </label>
-                      <select
-                        value={editingLead?.companyId || lead.companyId || ''}
-                        onChange={(e) => {
-                          if (editingLead && editingLead._id === lead._id) {
-                            console.log('Company selected:', e.target.value);
-                            const selectedCompany = companies.find(c => c._id === e.target.value);
-                            const updatedLead = { 
-                              ...editingLead, 
-                              companyId: e.target.value,
-                              companyName: selectedCompany?.name || ''
-                            };
-                            console.log('Updated lead:', updatedLead);
-                            setEditingLead(updatedLead);
-                            
-                            // Force re-render by updating the leads array
-                            setLeads(prevLeads => 
-                              prevLeads.map(l => 
-                                l._id === lead._id ? { ...l, companyId: e.target.value, companyName: selectedCompany?.name || '' } : l
-                              )
-                            );
-                            
-                            // Add visual feedback with a brief highlight
-                            const selectElement = e.target;
-                            selectElement.style.backgroundColor = '#d1fae5';
-                            setTimeout(() => {
-                              selectElement.style.backgroundColor = '';
-                            }, 500);
-                          }
-                        }}
-                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        disabled={!editingLead || editingLead._id !== lead._id}
-                      >
-                        <option value="">Select Company</option>
-                        {companies.length > 0 ? (
-                          companies.map(company => (
-                            <option key={company._id} value={company._id}>
-                              {company.name}
-                            </option>
-                          ))
-                        ) : (
-                          <option disabled>No companies available</option>
-                        )}
-                      </select>
-                      {companies.length === 0 && (
-                        <div className="text-xs text-red-500 mt-1">
-                          No companies found. Check console for details.
-                        </div>
-                      )}
-                    </div>
-                    
+                  <div>
                     {/* Job Selection */}
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">
@@ -545,25 +400,15 @@ export default function LeadsTable() {
                     </div>
                   </div>
                 ) : lead.status === 'Shortlisted' ? (
-                  <div className="text-sm space-y-1">
-                    {(editingLead && editingLead._id === lead._id && editingLead.companyName) || lead.companyName ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="text-blue-600 font-medium">
-                          {(editingLead && editingLead._id === lead._id) ? editingLead.companyName : lead.companyName}
-                        </span>
-                      </div>
-                    ) : null}
+                  <div className="text-sm">
                     {(editingLead && editingLead._id === lead._id && editingLead.jobTitle) || lead.jobTitle ? (
                       <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-gray-700">
+                        <span className="text-gray-700 font-medium">
                           {(editingLead && editingLead._id === lead._id) ? editingLead.jobTitle : lead.jobTitle}
                         </span>
                       </div>
-                    ) : null}
-                    {!((editingLead && editingLead._id === lead._id && editingLead.companyName) || lead.companyName) && 
-                     !((editingLead && editingLead._id === lead._id && editingLead.jobTitle) || lead.jobTitle) && (
+                    ) : (
                       <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
                         <span className="text-gray-400 italic">Not assigned</span>
