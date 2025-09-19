@@ -1,9 +1,6 @@
-import { EventEmitter } from 'events';
-
-class DashboardHub extends EventEmitter {
+class DashboardHub {
   constructor() {
-    super();
-    this.setMaxListeners(50); // Allow multiple listeners
+    this.listeners = new Map();
     this.connectedDashboards = new Set();
   }
 
@@ -21,6 +18,30 @@ class DashboardHub extends EventEmitter {
     this.emit('dashboard:disconnected', dashboardName);
   }
 
+  // Event system
+  on(event, callback) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    this.listeners.get(event).push(callback);
+  }
+
+  off(event, callback) {
+    if (this.listeners.has(event)) {
+      const callbacks = this.listeners.get(event);
+      const index = callbacks.indexOf(callback);
+      if (index > -1) {
+        callbacks.splice(index, 1);
+      }
+    }
+  }
+
+  emit(event, data) {
+    if (this.listeners.has(event)) {
+      this.listeners.get(event).forEach(callback => callback(data));
+    }
+  }
+
   // Application events
   applicationStatusChanged(applicationId, newStatus, oldStatus = null) {
     console.log(`📝 Application ${applicationId} status changed: ${oldStatus} → ${newStatus}`);
@@ -35,14 +56,6 @@ class DashboardHub extends EventEmitter {
   applicationCreated(application) {
     console.log(`📝 New application created: ${application.id}`);
     this.emit('application:created', { 
-      application,
-      timestamp: Date.now()
-    });
-  }
-
-  applicationUpdated(application) {
-    console.log(`📝 Application updated: ${application.id}`);
-    this.emit('application:updated', { 
       application,
       timestamp: Date.now()
     });
@@ -65,14 +78,6 @@ class DashboardHub extends EventEmitter {
     });
   }
 
-  jobDeleted(jobId) {
-    console.log(`💼 Job deleted: ${jobId}`);
-    this.emit('job:deleted', { 
-      jobId,
-      timestamp: Date.now()
-    });
-  }
-
   // Lead events
   leadStatusChanged(leadId, newStatus, oldStatus = null) {
     console.log(`👥 Lead ${leadId} status changed: ${oldStatus} → ${newStatus}`);
@@ -80,51 +85,6 @@ class DashboardHub extends EventEmitter {
       leadId, 
       newStatus, 
       oldStatus,
-      timestamp: Date.now()
-    });
-  }
-
-  leadAssigned(leadId, agentId, agentName = null) {
-    console.log(`👥 Lead ${leadId} assigned to agent ${agentId}`);
-    this.emit('lead:assigned', { 
-      leadId, 
-      agentId, 
-      agentName,
-      timestamp: Date.now()
-    });
-  }
-
-  leadUpdated(lead) {
-    console.log(`👥 Lead updated: ${lead.id}`);
-    this.emit('lead:updated', { 
-      lead,
-      timestamp: Date.now()
-    });
-  }
-
-  // User events
-  userRoleChanged(userId, newRole, oldRole = null) {
-    console.log(`👤 User ${userId} role changed: ${oldRole} → ${newRole}`);
-    this.emit('user:roleChanged', { 
-      userId, 
-      newRole, 
-      oldRole,
-      timestamp: Date.now()
-    });
-  }
-
-  userCreated(user) {
-    console.log(`👤 New user created: ${user.name}`);
-    this.emit('user:created', { 
-      user,
-      timestamp: Date.now()
-    });
-  }
-
-  userUpdated(user) {
-    console.log(`👤 User updated: ${user.name}`);
-    this.emit('user:updated', { 
-      user,
       timestamp: Date.now()
     });
   }
@@ -143,11 +103,6 @@ class DashboardHub extends EventEmitter {
   refreshLeads() {
     console.log(`🔄 Refreshing leads data`);
     this.emit('data:refreshLeads', { timestamp: Date.now() });
-  }
-
-  refreshUsers() {
-    console.log(`🔄 Refreshing users data`);
-    this.emit('data:refreshUsers', { timestamp: Date.now() });
   }
 
   refreshAll() {
@@ -193,7 +148,7 @@ class DashboardHub extends EventEmitter {
 
   // Cleanup
   cleanup() {
-    this.removeAllListeners();
+    this.listeners.clear();
     this.connectedDashboards.clear();
     console.log('🧹 Dashboard hub cleaned up');
   }
