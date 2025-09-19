@@ -18,12 +18,26 @@ const ShortlistedCandidatesTable = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
+      console.log('Fetching shortlisted leads...');
       const response = await axios.get('https://api.ozarx.in/api/crm/leads?status=Shortlisted', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
+      console.log('Shortlisted leads response:', response.data);
       if (response.data.success) {
         setShortlistedLeads(response.data.data);
+        console.log('Shortlisted leads set:', response.data.data);
+      } else {
+        // Try fetching all leads and filter client-side
+        const allLeadsResponse = await axios.get('https://api.ozarx.in/api/crm/leads', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (allLeadsResponse.data.success) {
+          const shortlisted = allLeadsResponse.data.data.filter(lead => lead.status === 'Shortlisted');
+          setShortlistedLeads(shortlisted);
+          console.log('Filtered shortlisted leads:', shortlisted);
+        }
       }
     } catch (err) {
       console.error('Error fetching shortlisted leads:', err);
@@ -37,19 +51,33 @@ const ShortlistedCandidatesTable = () => {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agent</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Shortlisted</th>
-          </tr>
-        </thead>
+    <div>
+      {/* Debug Information */}
+      <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
+        <div>Shortlisted leads count: {shortlistedLeads.length}</div>
+        {shortlistedLeads.length > 0 && (
+          <div className="mt-2">
+            <div>Sample lead data:</div>
+            <pre className="text-xs bg-white p-2 rounded mt-1 overflow-auto">
+              {JSON.stringify(shortlistedLeads[0], null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table id="shortlisted-table" className="min-w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agent</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Shortlisted</th>
+            </tr>
+          </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {shortlistedLeads.map((lead) => (
             <tr key={lead._id} className="hover:bg-gray-50">
@@ -224,7 +252,30 @@ export default function Reports() {
 
       {/* Shortlisted Candidates with Company/Job Assignment */}
       <section id="shortlisted">
-        <h2 className="text-xl font-semibold mb-2">Shortlisted Candidates</h2>
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-xl font-semibold">Shortlisted Candidates</h2>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                const table = document.querySelector('#shortlisted-table');
+                if (table) {
+                  const component = table.__reactInternalInstance || table._reactInternalFiber;
+                  // Force re-render by updating state
+                  window.location.reload();
+                }
+              }}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+            >
+              Refresh Shortlisted
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+            >
+              Refresh All Data
+            </button>
+          </div>
+        </div>
         <div className="bg-white rounded shadow p-4">
           <ShortlistedCandidatesTable />
         </div>

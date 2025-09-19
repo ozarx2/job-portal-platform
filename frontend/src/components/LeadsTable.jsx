@@ -160,15 +160,14 @@ export default function LeadsTable() {
       // Prepare the lead data with company and job information
       const leadData = {
         ...editingLead,
-        // If company is selected, get company name
-        companyName: editingLead.companyId ? 
-          companies.find(c => c._id === editingLead.companyId)?.name : 
-          editingLead.companyName,
-        // If job is selected, get job title
-        jobTitle: editingLead.jobId ? 
-          jobs.find(j => j._id === editingLead.jobId)?.title : 
-          editingLead.jobTitle
+        // Ensure company and job names are properly set
+        companyName: editingLead.companyName || 
+          (editingLead.companyId ? companies.find(c => c._id === editingLead.companyId)?.name : ''),
+        jobTitle: editingLead.jobTitle || 
+          (editingLead.jobId ? jobs.find(j => j._id === editingLead.jobId)?.title : '')
       };
+
+      console.log('Saving lead data:', leadData);
 
       await axios.put(
         `https://api.ozarx.in/api/crm/leads/${editingLead._id}`,
@@ -344,7 +343,12 @@ export default function LeadsTable() {
                         onChange={(e) => {
                           if (editingLead && editingLead._id === lead._id) {
                             console.log('Company selected:', e.target.value);
-                            setEditingLead({ ...editingLead, companyId: e.target.value });
+                            const selectedCompany = companies.find(c => c._id === e.target.value);
+                            setEditingLead({ 
+                              ...editingLead, 
+                              companyId: e.target.value,
+                              companyName: selectedCompany?.name || ''
+                            });
                           }
                         }}
                         className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -375,7 +379,12 @@ export default function LeadsTable() {
                         value={editingLead?.jobId || lead.jobId || ''}
                         onChange={(e) => {
                           if (editingLead && editingLead._id === lead._id) {
-                            setEditingLead({ ...editingLead, jobId: e.target.value });
+                            const selectedJob = jobs.find(j => j._id === e.target.value);
+                            setEditingLead({ 
+                              ...editingLead, 
+                              jobId: e.target.value,
+                              jobTitle: selectedJob?.title || ''
+                            });
                           }
                         }}
                         className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
