@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useApp } from '../contexts/AppContext';
+import apiService from '../services/apiService';
+import dashboardHub from '../services/dashboardHub';
 
 export default function EmployerDashboard() {
-  const token = localStorage.getItem('token');
-  const [jobs, setJobs] = useState([]);
-  const [applications, setApplications] = useState([]);
+  const { state, updateApplicationStatus, createJob } = useApp();
+  const { jobs, applications } = state;
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [jobForm, setJobForm] = useState({ title: '', description: '', location: '' });
@@ -12,54 +13,31 @@ export default function EmployerDashboard() {
   const statusOptions = ['Applied', 'Shortlisted', 'Selected', 'Interviewed', 'Hired', 'Rejected'];
 
   useEffect(() => {
-    fetchJobs();
-    fetchApplications();
+    // Register this dashboard with the hub
+    dashboardHub.registerDashboard('EmployerDashboard');
+    
+    return () => {
+      dashboardHub.unregisterDashboard('EmployerDashboard');
+    };
   }, []);
-
-  // 🔁 Fetch employer's jobs
-  const fetchJobs = async () => {
-    try {
-      const res = await axios.get('https://api.ozarx.in/api/jobs/employer', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setJobs(res.data.jobs);
-    } catch (err) {
-      console.error('Error fetching jobs:', err.message);
-    }
-  };
-
-  // 🔁 Fetch employer's applications
-  const fetchApplications = async () => {
-    try {
-      const res = await axios.get('https://api.ozarx.in/api/applications/employer', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setApplications(res.data);
-    } catch (err) {
-      console.error('Error fetching applications:', err.message);
-    }
-  };
 
   // ✅ Post a new job
   const postJob = async (e) => {
     e.preventDefault();
-    try {
-      await axios.post('https://api.ozarx.in/api/jobs', jobForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    const result = await createJob(jobForm);
+    
+    if (result.success) {
       setMessage('Job posted successfully!');
       setMessageType('success');
       setJobForm({ title: '', description: '', location: '' });
-      fetchJobs();
       
       // Clear message after 3 seconds
       setTimeout(() => {
         setMessage('');
         setMessageType('');
       }, 3000);
-    } catch (err) {
-      console.error('Error posting job:', err);
-      setMessage(`Error posting job: ${err.response?.data?.message || err.message}`);
+    } else {
+      setMessage(`Error posting job: ${result.error}`);
       setMessageType('error');
       setTimeout(() => {
         setMessage('');
@@ -70,93 +48,21 @@ export default function EmployerDashboard() {
 
   // 🔁 Update status
   const updateStatus = async (appId, newStatus) => {
-    try {
-      console.log('🔄 Updating status:', { appId, newStatus });
+    console.log('🔄 Updating status:', { appId, newStatus });
+    
+    const result = await updateApplicationStatus(appId, newStatus);
+    
+    if (result.success) {
+      setMessage('Status updated successfully!');
+      setMessageType('success');
       
-      const payload = { status: newStatus };
-      console.log('📤 Sending payload:', payload);
-      
-      // Try multiple endpoints to find the correct one
-      let response;
-      let endpointUsed = '';
-      
-      try {
-        // Try 1: CRM leads endpoint
-        endpointUsed = 'CRM Leads';
-        response = await axios.put(`https://api.ozarx.in/api/crm/leads/${appId}`, payload, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      } catch (err1) {
-        console.log('CRM leads failed, trying applications...');
-        try {
-          // Try 2: Applications endpoint with PUT
-          endpointUsed = 'Applications PUT';
-          response = await axios.put(`https://api.ozarx.in/api/applications/${appId}`, payload, {
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-        } catch (err2) {
-          console.log('Applications PUT failed, trying PATCH...');
-          // Try 3: Applications endpoint with PATCH
-          endpointUsed = 'Applications PATCH';
-          response = await axios.patch(`https://api.ozarx.in/api/applications/${appId}`, payload, {
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-        }
-      }
-      
-      console.log(`✅ Success using endpoint: ${endpointUsed}`);
-      
-      console.log('📥 API Response:', response.data);
-      
-      if (response.data.success) {
-        setMessage('Status updated successfully!');
-        setMessageType('success');
-        fetchApplications();
-        
-        // Clear message after 3 seconds
-        setTimeout(() => {
-          setMessage('');
-          setMessageType('');
-        }, 3000);
-      } else {
-        setMessage('Failed to update status. Please try again.');
-        setMessageType('error');
-        setTimeout(() => {
-          setMessage('');
-          setMessageType('');
-        }, 3000);
-      }
-    } catch (err) {
-      console.error('❌ Error updating status:', err);
-      console.error('❌ Error response:', err.response?.data);
-      console.error('❌ Error status:', err.response?.status);
-      
-      let errorMessage = 'Error updating status';
-      
-      if (err.response?.status === 400) {
-        errorMessage = `Bad Request (400): ${err.response?.data?.message || 'Invalid request format'}`;
-      } else if (err.response?.status === 401) {
-        errorMessage = 'Unauthorized: Please login again';
-      } else if (err.response?.status === 403) {
-        errorMessage = 'Forbidden: You do not have permission to update this application';
-      } else if (err.response?.status === 404) {
-        errorMessage = 'Application not found';
-      } else if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else {
-        errorMessage = err.message;
-      }
-      
-      setMessage(errorMessage);
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 3000);
+    } else {
+      setMessage(`Error updating status: ${result.error}`);
       setMessageType('error');
       setTimeout(() => {
         setMessage('');
@@ -178,48 +84,15 @@ export default function EmployerDashboard() {
     
     console.log('🧪 Testing API with:', { appId: testApp._id, status: testStatus });
     
-    try {
-      let response;
-      let endpointUsed = '';
-      
-      try {
-        // Try 1: CRM leads endpoint
-        endpointUsed = 'CRM Leads';
-        response = await axios.put(`https://api.ozarx.in/api/crm/leads/${testApp._id}`, 
-          { status: testStatus }, 
-          {
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-      } catch (err1) {
-        console.log('🧪 CRM leads failed, trying applications...');
-        try {
-          // Try 2: Applications endpoint
-          endpointUsed = 'Applications';
-          response = await axios.patch(`https://api.ozarx.in/api/applications/${testApp._id}`, 
-            { status: testStatus }, 
-            {
-              headers: { 
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-        } catch (err2) {
-          throw err2; // Re-throw the last error
-        }
-      }
-      
-      console.log(`🧪 Test successful using endpoint: ${endpointUsed}`);
-      console.log('🧪 Test response:', response.data);
-      setMessage(`API test successful using ${endpointUsed}! Check console for details.`);
+    const result = await apiService.testApplicationUpdate(testApp._id, testStatus);
+    
+    if (result.success) {
+      console.log('🧪 Test successful:', result.data);
+      setMessage(`API test successful! Check console for details.`);
       setMessageType('success');
-    } catch (err) {
-      console.error('🧪 All endpoints failed:', err);
-      setMessage(`API test failed: ${err.response?.data?.message || err.message}`);
+    } else {
+      console.error('🧪 Test failed:', result.message);
+      setMessage(`API test failed: ${result.message}`);
       setMessageType('error');
     }
   };
