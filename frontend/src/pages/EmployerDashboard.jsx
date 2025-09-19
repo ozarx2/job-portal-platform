@@ -8,7 +8,7 @@ export default function EmployerDashboard() {
   const [message, setMessage] = useState('');
   const [jobForm, setJobForm] = useState({ title: '', description: '', location: '' });
 
-  const statusOptions = ['Applied', 'Shortlisted', 'Interviewed', 'Hired', 'Rejected'];
+  const statusOptions = ['Applied', 'Shortlisted', 'Selected', 'Interviewed', 'Hired', 'Rejected'];
 
   useEffect(() => {
     fetchJobs();
