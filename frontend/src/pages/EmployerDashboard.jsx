@@ -71,11 +71,19 @@ export default function EmployerDashboard() {
   // 🔁 Update status
   const updateStatus = async (appId, newStatus) => {
     try {
-      const response = await axios.put(`https://api.ozarx.in/api/applications/${appId}/status`, {
-        status: newStatus
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+      console.log('🔄 Updating status:', { appId, newStatus });
+      
+      const payload = { status: newStatus };
+      console.log('📤 Sending payload:', payload);
+      
+      const response = await axios.patch(`https://api.ozarx.in/api/applications/${appId}`, payload, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      console.log('📥 API Response:', response.data);
       
       if (response.data.success) {
         setMessage('Status updated successfully!');
@@ -96,8 +104,27 @@ export default function EmployerDashboard() {
         }, 3000);
       }
     } catch (err) {
-      console.error('Error updating status:', err);
-      setMessage(`Error updating status: ${err.response?.data?.message || err.message}`);
+      console.error('❌ Error updating status:', err);
+      console.error('❌ Error response:', err.response?.data);
+      console.error('❌ Error status:', err.response?.status);
+      
+      let errorMessage = 'Error updating status';
+      
+      if (err.response?.status === 400) {
+        errorMessage = `Bad Request (400): ${err.response?.data?.message || 'Invalid request format'}`;
+      } else if (err.response?.status === 401) {
+        errorMessage = 'Unauthorized: Please login again';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'Forbidden: You do not have permission to update this application';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Application not found';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else {
+        errorMessage = err.message;
+      }
+      
+      setMessage(errorMessage);
       setMessageType('error');
       setTimeout(() => {
         setMessage('');
@@ -106,9 +133,51 @@ export default function EmployerDashboard() {
     }
   };
 
+  // 🧪 Test API endpoint
+  const testApiEndpoint = async () => {
+    if (applications.length === 0) {
+      setMessage('No applications to test with');
+      setMessageType('error');
+      return;
+    }
+    
+    const testApp = applications[0];
+    const testStatus = 'Test Status';
+    
+    console.log('🧪 Testing API with:', { appId: testApp._id, status: testStatus });
+    
+    try {
+      const response = await axios.patch(`https://api.ozarx.in/api/applications/${testApp._id}`, 
+        { status: testStatus }, 
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('🧪 Test response:', response.data);
+      setMessage('API test successful! Check console for details.');
+      setMessageType('success');
+    } catch (err) {
+      console.error('🧪 Test failed:', err);
+      setMessage(`API test failed: ${err.response?.data?.message || err.message}`);
+      setMessageType('error');
+    }
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-10">
-      <h1 className="text-3xl font-bold mb-6">Employer Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Employer Dashboard</h1>
+        <button 
+          onClick={testApiEndpoint}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          🧪 Test API
+        </button>
+      </div>
       {message && (
         <div className={`p-4 rounded-lg ${
           messageType === 'success' 
