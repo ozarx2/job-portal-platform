@@ -337,18 +337,30 @@ export default function LeadsTable() {
                   <div className="space-y-2">
                     {/* Company Selection */}
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Company:</label>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Company: {editingLead && editingLead._id === lead._id && editingLead.companyName && (
+                          <span className="text-green-600 ml-1">✓ {editingLead.companyName}</span>
+                        )}
+                      </label>
                       <select
                         value={editingLead?.companyId || lead.companyId || ''}
                         onChange={(e) => {
                           if (editingLead && editingLead._id === lead._id) {
                             console.log('Company selected:', e.target.value);
                             const selectedCompany = companies.find(c => c._id === e.target.value);
-                            setEditingLead({ 
+                            const updatedLead = { 
                               ...editingLead, 
                               companyId: e.target.value,
                               companyName: selectedCompany?.name || ''
-                            });
+                            };
+                            console.log('Updated lead:', updatedLead);
+                            setEditingLead(updatedLead);
+                            // Force re-render by updating the leads array
+                            setLeads(prevLeads => 
+                              prevLeads.map(l => 
+                                l._id === lead._id ? { ...l, companyId: e.target.value, companyName: selectedCompany?.name || '' } : l
+                              )
+                            );
                           }
                         }}
                         className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -374,17 +386,29 @@ export default function LeadsTable() {
                     
                     {/* Job Selection */}
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Job:</label>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Job: {editingLead && editingLead._id === lead._id && editingLead.jobTitle && (
+                          <span className="text-green-600 ml-1">✓ {editingLead.jobTitle}</span>
+                        )}
+                      </label>
                       <select
                         value={editingLead?.jobId || lead.jobId || ''}
                         onChange={(e) => {
                           if (editingLead && editingLead._id === lead._id) {
                             const selectedJob = jobs.find(j => j._id === e.target.value);
-                            setEditingLead({ 
+                            const updatedLead = { 
                               ...editingLead, 
                               jobId: e.target.value,
                               jobTitle: selectedJob?.title || ''
-                            });
+                            };
+                            console.log('Updated job:', updatedLead);
+                            setEditingLead(updatedLead);
+                            // Force re-render by updating the leads array
+                            setLeads(prevLeads => 
+                              prevLeads.map(l => 
+                                l._id === lead._id ? { ...l, jobId: e.target.value, jobTitle: selectedJob?.title || '' } : l
+                              )
+                            );
                           }
                         }}
                         className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -401,13 +425,18 @@ export default function LeadsTable() {
                   </div>
                 ) : lead.status === 'Shortlisted' ? (
                   <div className="text-sm">
-                    {lead.companyName && (
-                      <div className="text-blue-600 font-medium">{lead.companyName}</div>
-                    )}
-                    {lead.jobTitle && (
-                      <div className="text-gray-600">{lead.jobTitle}</div>
-                    )}
-                    {!lead.companyName && !lead.jobTitle && (
+                    {(editingLead && editingLead._id === lead._id && editingLead.companyName) || lead.companyName ? (
+                      <div className="text-blue-600 font-medium">
+                        {(editingLead && editingLead._id === lead._id) ? editingLead.companyName : lead.companyName}
+                      </div>
+                    ) : null}
+                    {(editingLead && editingLead._id === lead._id && editingLead.jobTitle) || lead.jobTitle ? (
+                      <div className="text-gray-600">
+                        {(editingLead && editingLead._id === lead._id) ? editingLead.jobTitle : lead.jobTitle}
+                      </div>
+                    ) : null}
+                    {!((editingLead && editingLead._id === lead._id && editingLead.companyName) || lead.companyName) && 
+                     !((editingLead && editingLead._id === lead._id && editingLead.jobTitle) || lead.jobTitle) && (
                       <span className="text-gray-400 italic">Not assigned</span>
                     )}
                   </div>
