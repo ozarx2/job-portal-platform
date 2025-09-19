@@ -157,14 +157,30 @@ export default function LeadsTable() {
         return;
       }
 
+      // Show loading state
+      const saveButton = document.querySelector(`[data-lead-id="${editingLead._id}"] .save-button`);
+      if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+        saveButton.className = saveButton.className.replace('bg-green-600', 'bg-gray-400');
+      }
+
       // Prepare the lead data with company and job information
+      const selectedCompany = companies.find(c => c._id === editingLead.companyId);
+      const selectedJob = jobs.find(j => j._id === editingLead.jobId);
+      
       const leadData = {
         ...editingLead,
         // Ensure company and job names are properly set
-        companyName: editingLead.companyName || 
-          (editingLead.companyId ? companies.find(c => c._id === editingLead.companyId)?.name : ''),
-        jobTitle: editingLead.jobTitle || 
-          (editingLead.jobId ? jobs.find(j => j._id === editingLead.jobId)?.title : '')
+        companyName: editingLead.companyName || selectedCompany?.name || '',
+        jobTitle: editingLead.jobTitle || selectedJob?.title || '',
+        // Also include the IDs for reference
+        companyId: editingLead.companyId || '',
+        jobId: editingLead.jobId || '',
+        // Update the status to reflect the assignment
+        status: editingLead.status,
+        // Add timestamp for tracking
+        updatedAt: new Date().toISOString()
       };
 
       console.log('Saving lead data:', leadData);
@@ -184,6 +200,53 @@ export default function LeadsTable() {
       );
       
       console.log('Save response:', response.data);
+      
+      // Verify the data was saved correctly
+      if (response.data.success) {
+        console.log('✅ Lead updated successfully in database');
+        console.log('Updated lead data:', response.data.data);
+        
+        // Check if company/job data is present in the response
+        if (response.data.data.companyName || response.data.data.jobTitle) {
+          console.log('✅ Company/Job data confirmed in database');
+          
+          // Show success notification
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+          notification.textContent = '✅ Company and Job assigned successfully!';
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        } else {
+          console.log('⚠️ Company/Job data may not be saved correctly');
+          
+          // Show warning notification
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded shadow-lg z-50';
+          notification.textContent = '⚠️ Assignment may not be saved correctly';
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        }
+      } else {
+        console.log('❌ Failed to update lead in database');
+        console.log('Error:', response.data.message);
+        
+        // Show error notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
+        notification.textContent = '❌ Failed to save assignment';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+      
       setEditingLead(null);
       
       // Force refresh of leads data
@@ -198,8 +261,22 @@ export default function LeadsTable() {
             : lead
         )
       );
+      
+      // Restore save button state
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save';
+        saveButton.className = saveButton.className.replace('bg-gray-400', 'bg-green-600');
+      }
     } catch (err) {
       console.error("Error updating lead:", err);
+      
+      // Restore save button state on error
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save';
+        saveButton.className = saveButton.className.replace('bg-gray-400', 'bg-green-600');
+      }
     }
   };
 
@@ -356,9 +433,14 @@ export default function LeadsTable() {
                     {/* Company Selection */}
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">
-                        Company: {editingLead && editingLead._id === lead._id && editingLead.companyName && (
-                          <span className="text-green-600 ml-1">✓ {editingLead.companyName}</span>
-                        )}
+                        <div className="flex items-center space-x-2">
+                          <span>Company:</span>
+                          {editingLead && editingLead._id === lead._id && editingLead.companyName && (
+                            <span className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                              ✓ {editingLead.companyName}
+                            </span>
+                          )}
+                        </div>
                       </label>
                       <select
                         value={editingLead?.companyId || lead.companyId || ''}
@@ -373,12 +455,20 @@ export default function LeadsTable() {
                             };
                             console.log('Updated lead:', updatedLead);
                             setEditingLead(updatedLead);
+                            
                             // Force re-render by updating the leads array
                             setLeads(prevLeads => 
                               prevLeads.map(l => 
                                 l._id === lead._id ? { ...l, companyId: e.target.value, companyName: selectedCompany?.name || '' } : l
                               )
                             );
+                            
+                            // Add visual feedback with a brief highlight
+                            const selectElement = e.target;
+                            selectElement.style.backgroundColor = '#d1fae5';
+                            setTimeout(() => {
+                              selectElement.style.backgroundColor = '';
+                            }, 500);
                           }
                         }}
                         className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -405,9 +495,14 @@ export default function LeadsTable() {
                     {/* Job Selection */}
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">
-                        Job: {editingLead && editingLead._id === lead._id && editingLead.jobTitle && (
-                          <span className="text-green-600 ml-1">✓ {editingLead.jobTitle}</span>
-                        )}
+                        <div className="flex items-center space-x-2">
+                          <span>Job:</span>
+                          {editingLead && editingLead._id === lead._id && editingLead.jobTitle && (
+                            <span className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                              ✓ {editingLead.jobTitle}
+                            </span>
+                          )}
+                        </div>
                       </label>
                       <select
                         value={editingLead?.jobId || lead.jobId || ''}
@@ -421,12 +516,20 @@ export default function LeadsTable() {
                             };
                             console.log('Updated job:', updatedLead);
                             setEditingLead(updatedLead);
+                            
                             // Force re-render by updating the leads array
                             setLeads(prevLeads => 
                               prevLeads.map(l => 
                                 l._id === lead._id ? { ...l, jobId: e.target.value, jobTitle: selectedJob?.title || '' } : l
                               )
                             );
+                            
+                            // Add visual feedback with a brief highlight
+                            const selectElement = e.target;
+                            selectElement.style.backgroundColor = '#dbeafe';
+                            setTimeout(() => {
+                              selectElement.style.backgroundColor = '';
+                            }, 500);
                           }
                         }}
                         className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -442,20 +545,29 @@ export default function LeadsTable() {
                     </div>
                   </div>
                 ) : lead.status === 'Shortlisted' ? (
-                  <div className="text-sm">
+                  <div className="text-sm space-y-1">
                     {(editingLead && editingLead._id === lead._id && editingLead.companyName) || lead.companyName ? (
-                      <div className="text-blue-600 font-medium">
-                        {(editingLead && editingLead._id === lead._id) ? editingLead.companyName : lead.companyName}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-blue-600 font-medium">
+                          {(editingLead && editingLead._id === lead._id) ? editingLead.companyName : lead.companyName}
+                        </span>
                       </div>
                     ) : null}
                     {(editingLead && editingLead._id === lead._id && editingLead.jobTitle) || lead.jobTitle ? (
-                      <div className="text-gray-600">
-                        {(editingLead && editingLead._id === lead._id) ? editingLead.jobTitle : lead.jobTitle}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-gray-700">
+                          {(editingLead && editingLead._id === lead._id) ? editingLead.jobTitle : lead.jobTitle}
+                        </span>
                       </div>
                     ) : null}
                     {!((editingLead && editingLead._id === lead._id && editingLead.companyName) || lead.companyName) && 
                      !((editingLead && editingLead._id === lead._id && editingLead.jobTitle) || lead.jobTitle) && (
-                      <span className="text-gray-400 italic">Not assigned</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <span className="text-gray-400 italic">Not assigned</span>
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -468,8 +580,9 @@ export default function LeadsTable() {
                 {editingLead && editingLead._id === lead._id ? (
                   <div className="flex space-x-2">
                     <button
-                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                      className="save-button inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
                       onClick={saveEdit}
+                      data-lead-id={editingLead._id}
                     >
                       <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

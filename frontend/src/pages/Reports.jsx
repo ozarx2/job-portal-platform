@@ -25,17 +25,28 @@ const ShortlistedCandidatesTable = () => {
 
       console.log('Shortlisted leads response:', response.data);
       if (response.data.success) {
-        setShortlistedLeads(response.data.data);
-        console.log('Shortlisted leads set:', response.data.data);
+        const leads = response.data.data || [];
+        setShortlistedLeads(leads);
+        console.log('Shortlisted leads set:', leads);
+        
         // Debug: Check if company/job data exists
-        response.data.data.forEach((lead, index) => {
+        console.log(`📊 Found ${leads.length} shortlisted leads`);
+        leads.forEach((lead, index) => {
           console.log(`Lead ${index}:`, {
             name: lead.name,
             companyName: lead.companyName,
             jobTitle: lead.jobTitle,
             companyId: lead.companyId,
-            jobId: lead.jobId
+            jobId: lead.jobId,
+            status: lead.status
           });
+          
+          // Check if this lead has company/job assignments
+          if (lead.companyName || lead.jobTitle) {
+            console.log(`✅ Lead ${index} has company/job assignments`);
+          } else {
+            console.log(`⚠️ Lead ${index} missing company/job assignments`);
+          }
         });
       } else {
         // Try fetching all leads and filter client-side
@@ -335,6 +346,44 @@ export default function Reports() {
               className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
             >
               Test API
+            </button>
+            <button
+              onClick={async () => {
+                console.log('Updating first shortlisted lead with test data...');
+                try {
+                  const token = localStorage.getItem('token');
+                  if (shortlistedLeads.length > 0) {
+                    const firstLead = shortlistedLeads[0];
+                    const updateData = {
+                      ...firstLead,
+                      companyName: 'Test Company Updated',
+                      jobTitle: 'Test Job Updated',
+                      companyId: 'test-company-id',
+                      jobId: 'test-job-id'
+                    };
+                    
+                    const response = await axios.put(
+                      `https://api.ozarx.in/api/crm/leads/${firstLead._id}`,
+                      updateData,
+                      { headers: { 'Authorization': `Bearer ${token}` } }
+                    );
+                    
+                    console.log('Update response:', response.data);
+                    if (response.data.success) {
+                      console.log('✅ Lead updated successfully');
+                      // Refresh the data
+                      fetchShortlistedLeads();
+                    }
+                  } else {
+                    console.log('No shortlisted leads to update');
+                  }
+                } catch (err) {
+                  console.error('Update error:', err);
+                }
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+            >
+              Update Test
             </button>
           </div>
         </div>
