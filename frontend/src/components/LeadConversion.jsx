@@ -45,7 +45,7 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
-      await axios.put(`${API_BASE_URL}/crm/leads/${lead._id}/collect-email`, 
+      await axios.put(`${API_BASE_URL}/crm/leads/${lead?._id}/collect-email`, 
         { email },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -74,7 +74,7 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
-      const response = await axios.post(`${API_BASE_URL}/crm/leads/${lead._id}/convert-to-preuser`, 
+      const response = await axios.post(`${API_BASE_URL}/crm/leads/${lead?._id}/convert-to-preuser`, 
         { 
           email,
           jobId: selectedJob._id,
@@ -141,13 +141,13 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
         p: 3
       }}>
         <Typography variant="h5" gutterBottom>
-          Lead Conversion: {lead.name}
+          Lead Conversion: {lead?.name || 'Unknown Lead'}
         </Typography>
         
         <Box sx={{ mb: 2 }}>
-          {getStatusChip(lead.status)}
+          {getStatusChip(lead?.status)}
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Phone: {lead.phone} | Location: {lead.location || 'N/A'}
+            Phone: {lead?.phone || 'N/A'} | Location: {lead?.location || 'N/A'}
           </Typography>
         </Box>
 
@@ -287,7 +287,7 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
                   Pre-User Creation Summary:
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Candidate:</strong> {lead.name}
+                  <strong>Candidate:</strong> {lead?.name || 'Unknown Lead'}
                 </Typography>
                 <Typography variant="body2">
                   <strong>Email:</strong> {email}

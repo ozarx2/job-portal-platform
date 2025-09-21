@@ -102,7 +102,7 @@ export default function LeadsTable() {
       }
 
       // Show loading state
-      const saveButton = document.querySelector(`[data-lead-id="${editingLead._id}"] .save-button`);
+      const saveButton = document.querySelector(`[data-lead-id="${editingLead?._id}"] .save-button`);
       if (saveButton) {
         saveButton.disabled = true;
         saveButton.textContent = 'Saving...';
@@ -129,7 +129,7 @@ export default function LeadsTable() {
       console.log('Job Title:', editingLead.jobTitle);
 
       const response = await axios.put(
-        `https://api.ozarx.in/api/crm/leads/${editingLead._id}`,
+        `https://api.ozarx.in/api/crm/leads/${editingLead?._id}`,
         leadData,
         {
           headers: {
@@ -195,7 +195,7 @@ export default function LeadsTable() {
       // Also refresh the leads array to ensure UI updates
       setLeads(prevLeads => 
         prevLeads.map(lead => 
-          lead._id === editingLead._id 
+          lead._id === editingLead?._id 
             ? { ...lead, ...leadData }
             : lead
         )
@@ -255,7 +255,7 @@ export default function LeadsTable() {
   const handleConversionComplete = (convertedLead) => {
     // Update the lead in the local state
     setLeads(leads.map(lead => 
-      lead._id === convertedLead.leadId ? { ...lead, ...convertedLead } : lead
+      lead._id === convertedLead?.leadId ? { ...lead, ...convertedLead } : lead
     ));
     setConversionModalOpen(false);
     setConvertingLead(null);
@@ -328,11 +328,11 @@ export default function LeadsTable() {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {leads.map((lead, index) => (
-            <tr key={lead._id} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+            <tr key={lead?._id || index} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <div className="flex items-center">
                   <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
-                  {new Date(lead.createdAt).toLocaleDateString()}
+                  {lead?.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A'}
                 </div>
               </td>
 
@@ -347,7 +347,7 @@ export default function LeadsTable() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
-                  <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                  <div className="text-sm font-medium text-gray-900">{lead?.name || 'N/A'}</div>
                 )}
               </td>
               
@@ -362,7 +362,7 @@ export default function LeadsTable() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
-                  <div className="text-sm text-gray-900">{lead.phone}</div>
+                  <div className="text-sm text-gray-900">{lead?.phone || 'N/A'}</div>
                 )}
               </td>
               
@@ -377,7 +377,7 @@ export default function LeadsTable() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
-                  <div className="text-sm text-gray-900">{lead.location || 'N/A'}</div>
+                  <div className="text-sm text-gray-900">{lead?.location || 'N/A'}</div>
                 )}
               </td>
               
@@ -402,23 +402,23 @@ export default function LeadsTable() {
                     <option>Discarded</option>
                   </select>
                 ) : (
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
-                    {lead.status}
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead?.status)}`}>
+                    {lead?.status || 'Unknown'}
                   </span>
                 )}
               </td>
 
               {/* Job Selection - Only visible when status is Shortlisted */}
               <td className="px-6 py-4 whitespace-nowrap">
-                {(editingLead && editingLead._id === lead._id && editingLead.status === 'Shortlisted') || 
-                 (lead.status === 'Shortlisted' && !editingLead) ? (
+                {(editingLead && editingLead._id === lead?._id && editingLead.status === 'Shortlisted') || 
+                 (lead?.status === 'Shortlisted' && !editingLead) ? (
                   <div>
                     {/* Job Selection */}
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">
                         <div className="flex items-center space-x-2">
                           <span>Job:</span>
-                          {editingLead && editingLead._id === lead._id && editingLead.jobTitle && (
+                          {editingLead && editingLead._id === lead?._id && editingLead.jobTitle && (
                             <span className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
                               ✓ {editingLead.jobTitle}
                             </span>
@@ -426,9 +426,9 @@ export default function LeadsTable() {
                         </div>
                       </label>
                       <select
-                        value={editingLead?.jobId || lead.jobId || ''}
+                        value={editingLead?.jobId || lead?.jobId || ''}
                         onChange={(e) => {
-                          if (editingLead && editingLead._id === lead._id) {
+                          if (editingLead && editingLead._id === lead?._id) {
                             const selectedJob = jobs.find(j => j._id === e.target.value);
                             const updatedLead = { 
                               ...editingLead, 
@@ -441,7 +441,7 @@ export default function LeadsTable() {
                             // Force re-render by updating the leads array
                             setLeads(prevLeads => 
                               prevLeads.map(l => 
-                                l._id === lead._id ? { ...l, jobId: e.target.value, jobTitle: selectedJob?.title || '' } : l
+                                l._id === lead?._id ? { ...l, jobId: e.target.value, jobTitle: selectedJob?.title || '' } : l
                               )
                             );
                             
@@ -454,7 +454,7 @@ export default function LeadsTable() {
                           }
                         }}
                         className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        disabled={!editingLead || editingLead._id !== lead._id}
+                        disabled={!editingLead || editingLead._id !== lead?._id}
                       >
                         <option value="">Select Job</option>
                         {jobs.map(job => (
@@ -465,13 +465,13 @@ export default function LeadsTable() {
                       </select>
                     </div>
                   </div>
-                ) : lead.status === 'Shortlisted' ? (
+                ) : lead?.status === 'Shortlisted' ? (
                   <div className="text-sm">
-                    {(editingLead && editingLead._id === lead._id && editingLead.jobTitle) || lead.jobTitle ? (
+                    {(editingLead && editingLead._id === lead?._id && editingLead.jobTitle) || lead?.jobTitle ? (
                       <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <span className="text-gray-700 font-medium">
-                          {(editingLead && editingLead._id === lead._id) ? editingLead.jobTitle : lead.jobTitle}
+                          {(editingLead && editingLead._id === lead?._id) ? editingLead.jobTitle : lead?.jobTitle}
                         </span>
                       </div>
                     ) : (
@@ -488,7 +488,7 @@ export default function LeadsTable() {
 
               {/* Actions */}
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                {editingLead && editingLead._id === lead._id ? (
+                {editingLead && editingLead._id === lead?._id ? (
                   <div className="flex space-x-2">
                     <button
                       className="save-button inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
@@ -523,18 +523,18 @@ export default function LeadsTable() {
                     </button>
                     
                     {/* Status Update Buttons */}
-                    {getAvailableActions(lead.status).map((action) => (
+                    {getAvailableActions(lead?.status).map((action) => (
                       <button
                         key={action}
                         className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                        onClick={() => handleStatusUpdate(lead._id, action)}
+                        onClick={() => handleStatusUpdate(lead?._id, action)}
                       >
                         {action}
                       </button>
                     ))}
                     
                     {/* Conversion Button */}
-                    {lead.status === 'Shortlisted' && (
+                    {lead?.status === 'Shortlisted' && (
                       <button
                         className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
                         onClick={() => handleConversionStart(lead)}
@@ -548,7 +548,7 @@ export default function LeadsTable() {
                     
                     <button
                       className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
-                      onClick={() => deleteLead(lead._id)}
+                      onClick={() => deleteLead(lead?._id)}
                     >
                       <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
