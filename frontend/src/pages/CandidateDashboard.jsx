@@ -6,42 +6,42 @@ export default function CandidateDashboard() {
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [selectedJobs, setSelectedJobs] = useState([]);
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState(() => ({
     name: '',
     email: '',
     phone: '',
     image: null,
-  });
+  }));
   const [resumeFile, setResumeFile] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   
   // Loading states
-  const [loading, setLoading] = useState({
+  const [loading, setLoading] = useState(() => ({
     jobs: false,
     applications: false,
     profile: false,
     selectedJobs: false,
     submitting: false
-  });
+  }));
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   
   // Error handling states
-  const [retryCount, setRetryCount] = useState({
+  const [retryCount, setRetryCount] = useState(() => ({
     jobs: 0,
     applications: 0,
     profile: 0,
     selectedJobs: 0
-  });
+  }));
   
   // Form validation states
-  const [validationErrors, setValidationErrors] = useState({});
+  const [validationErrors, setValidationErrors] = useState(() => ({}));
 
   // Onboarding documents state
-  const [onboardingData, setOnboardingData] = useState({
+  const [onboardingData, setOnboardingData] = useState(() => ({
     selectedJobId: '',
     documents: {
       aadharCard: null,
@@ -58,7 +58,7 @@ export default function CandidateDashboard() {
       emergencyContact: '',
       bloodGroup: ''
     }
-  });
+  }));
 
   const token = localStorage.getItem('token');
 

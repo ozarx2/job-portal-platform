@@ -23,10 +23,10 @@ export default function AdminDashboard() {
   const [showAllJobs, setShowAllJobs] = useState(false);
   const [showAllApps, setShowAllApps] = useState(false);
   const [activeTab, setActiveTab] = useState('users');
-  const [leadFilters, setLeadFilters] = useState({
+  const [leadFilters, setLeadFilters] = useState(() => ({
     status: '',
     agentId: ''
-  });
+  }));
   const [agents, setAgents] = useState([]);
   const [editingLead, setEditingLead] = useState(null);
   const [leadsLoading, setLeadsLoading] = useState(false);

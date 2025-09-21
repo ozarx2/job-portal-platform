@@ -6,7 +6,7 @@ import axios from "axios";
 export default function ImportLeads({ onImportSuccess }) {
   const [fileData, setFileData] = useState([]);
   const [headers, setHeaders] = useState([]);
-  const [mapping, setMapping] = useState({});
+  const [mapping, setMapping] = useState(() => ({}));
   const [uploading, setUploading] = useState(false);
   const [fileType, setFileType] = useState("");
   const [successMessage, setSuccessMessage] = useState("");

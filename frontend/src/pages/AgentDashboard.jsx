@@ -7,7 +7,7 @@ import LeadsTable from "../components/LeadsTable";
 export default function AgentDashboard() {
   const [activeTab, setActiveTab] = useState("applications");
   const [applications, setApplications] = useState([]);
-  const [report, setReport] = useState({});
+  const [report, setReport] = useState(() => ({}));
   const [file, setFile] = useState(null);
   const [agentName, setAgentName] = useState("Agent");
 

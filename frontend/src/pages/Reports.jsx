@@ -163,7 +163,7 @@ const ShortlistedCandidatesTable = () => {
 export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [data, setData] = useState({ newRecruits: 0, dailyApplications: [], statusCounts: {}, range: {} });
+  const [data, setData] = useState(() => ({ newRecruits: 0, dailyApplications: [], statusCounts: {}, range: {} }));
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';

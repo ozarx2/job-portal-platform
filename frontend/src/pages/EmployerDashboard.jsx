@@ -8,7 +8,7 @@ export default function EmployerDashboard() {
   const { jobs, applications } = state;
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
-  const [jobForm, setJobForm] = useState({ title: '', description: '', location: '' });
+  const [jobForm, setJobForm] = useState(() => ({ title: '', description: '', location: '' }));
 
   const statusOptions = ['Applied', 'Shortlisted', 'Selected', 'Interviewed', 'Hired', 'Rejected'];
 
