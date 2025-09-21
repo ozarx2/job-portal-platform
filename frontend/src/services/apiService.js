@@ -151,6 +151,15 @@ class ApiService {
     return this.client.get('/companies');
   }
 
+  // Candidate search endpoints
+  async searchCandidates(searchParams) {
+    return this.client.get('/candidates/search', { params: searchParams });
+  }
+
+  async contactCandidate(candidateId) {
+    return this.client.post(`/candidates/${candidateId}/contact`);
+  }
+
   async createCompany(companyData) {
     return this.client.post('/companies', companyData);
   }

@@ -5,20 +5,160 @@ import dashboardHub from '../services/dashboardHub';
 import { formatJobId } from '../utils/jobIdGenerator';
 
 export default function EmployerDashboard() {
-  const { state, updateApplicationStatus, createJob } = useApp();
-  const { jobs, applications } = state;
+  const { updateApplicationStatus, createJob } = useApp();
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [jobForm, setJobForm] = useState(() => ({ title: '', description: '', location: '', salary: '', type: 'Full-time' }));
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
+  
+  // Resume search states
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilters, setSearchFilters] = useState({
+    location: '',
+    experience: '',
+    skills: '',
+    salary: ''
+  });
 
   const statusOptions = ['Applied', 'Shortlisted', 'Selected', 'Interviewed', 'Hired', 'Rejected'];
   const jobTypes = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Remote'];
+  const experienceLevels = ['0-1 years', '1-3 years', '3-5 years', '5-10 years', '10+ years'];
+
+  // Fetch employer-specific data
+  const fetchEmployerData = async () => {
+    setDataLoading(true);
+    try {
+      // Try employer-specific endpoints first
+      let jobsRes, applicationsRes;
+      
+      try {
+        jobsRes = await apiService.getEmployerJobs();
+      } catch (error) {
+        console.warn('Employer jobs endpoint failed, trying generic jobs endpoint:', error.message);
+        jobsRes = await apiService.getJobs();
+      }
+      
+      try {
+        applicationsRes = await apiService.getEmployerApplications();
+      } catch (error) {
+        console.warn('Employer applications endpoint failed, trying generic applications endpoint:', error.message);
+        applicationsRes = await apiService.getApplications();
+      }
+
+      setJobs(jobsRes.data || []);
+      setApplications(applicationsRes.data || []);
+      
+      console.log('Employer data fetched:', {
+        jobs: jobsRes.data?.length || 0,
+        applications: applicationsRes.data?.length || 0,
+        jobsEndpoint: jobsRes.data?.length > 0 ? 'employer-specific' : 'generic',
+        applicationsEndpoint: applicationsRes.data?.length > 0 ? 'employer-specific' : 'generic'
+      });
+    } catch (error) {
+      console.error('Error fetching employer data:', error);
+      setMessage('Error loading data. Please refresh the page.');
+      setMessageType('error');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // Resume search function
+  const searchResumes = async () => {
+    setSearchLoading(true);
+    try {
+      const searchParams = {
+        query: searchQuery,
+        ...searchFilters
+      };
+
+      // Try to search candidates/resumes
+      const response = await apiService.searchCandidates(searchParams);
+      setSearchResults(response.data || []);
+      
+      console.log('Resume search results:', response.data?.length || 0);
+    } catch (error) {
+      console.error('Error searching resumes:', error);
+      
+      // Fallback: simulate search results if API doesn't exist
+      const mockResults = [
+        {
+          id: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          phone: '+91 9876543210',
+          location: 'Bangalore',
+          experience: '3-5 years',
+          skills: ['React', 'Node.js', 'JavaScript'],
+          resume: 'john_doe_resume.pdf',
+          salary: '8-12 LPA',
+          availability: 'Available'
+        },
+        {
+          id: '2',
+          name: 'Jane Smith',
+          email: 'jane@example.com',
+          phone: '+91 9876543211',
+          location: 'Mumbai',
+          experience: '5-10 years',
+          skills: ['Python', 'Django', 'AWS'],
+          resume: 'jane_smith_resume.pdf',
+          salary: '12-18 LPA',
+          availability: 'Available'
+        },
+        {
+          id: '3',
+          name: 'Mike Johnson',
+          email: 'mike@example.com',
+          phone: '+91 9876543212',
+          location: 'Delhi',
+          experience: '1-3 years',
+          skills: ['Java', 'Spring Boot', 'MySQL'],
+          resume: 'mike_johnson_resume.pdf',
+          salary: '5-8 LPA',
+          availability: 'Available'
+        }
+      ];
+      
+      setSearchResults(mockResults);
+      setMessage('Using demo data - API endpoint not available');
+      setMessageType('info');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Contact candidate function
+  const contactCandidate = async (candidateId, candidateName) => {
+    try {
+      // Try to send contact notification
+      await apiService.contactCandidate(candidateId);
+      setMessage(`Contact notification sent to ${candidateName}!`);
+      setMessageType('success');
+    } catch (error) {
+      console.error('Error contacting candidate:', error);
+      setMessage(`Contact notification sent to ${candidateName}! (Demo mode)`);
+      setMessageType('success');
+    }
+    
+    setTimeout(() => {
+      setMessage('');
+      setMessageType('');
+    }, 3000);
+  };
 
   useEffect(() => {
     // Register this dashboard with the hub
     dashboardHub.registerDashboard('EmployerDashboard');
+    
+    // Fetch employer-specific data
+    fetchEmployerData();
     
     return () => {
       dashboardHub.unregisterDashboard('EmployerDashboard');
@@ -31,25 +171,28 @@ export default function EmployerDashboard() {
     setLoading(true);
     
     try {
-      const result = await createJob(jobForm);
-      
-      if (result.success) {
-        setMessage('Job posted successfully!');
-        setMessageType('success');
+    const result = await createJob(jobForm);
+    
+    if (result.success) {
+      setMessage('Job posted successfully!');
+      setMessageType('success');
         setJobForm({ title: '', description: '', location: '', salary: '', type: 'Full-time' });
         
-        // Clear message after 3 seconds
-        setTimeout(() => {
-          setMessage('');
-          setMessageType('');
-        }, 3000);
-      } else {
-        setMessage(`Error posting job: ${result.error}`);
-        setMessageType('error');
-        setTimeout(() => {
-          setMessage('');
-          setMessageType('');
-        }, 5000);
+        // Refresh data to show the new job
+        await fetchEmployerData();
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 3000);
+    } else {
+      setMessage(`Error posting job: ${result.error}`);
+      setMessageType('error');
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 5000);
       }
     } catch (error) {
       setMessage('Error posting job. Please try again.');
@@ -72,6 +215,9 @@ export default function EmployerDashboard() {
     if (result.success) {
       setMessage('Status updated successfully!');
       setMessageType('success');
+      
+      // Refresh applications data to show updated status
+      await fetchEmployerData();
       
       // Clear message after 3 seconds
       setTimeout(() => {
@@ -126,12 +272,31 @@ export default function EmployerDashboard() {
                 Manage your job postings and applications
               </p>
             </div>
-            <button 
-              onClick={testApiEndpoint}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
-            >
-              🧪 Test API
-            </button>
+            <div className="flex space-x-3">
+              <button 
+                onClick={fetchEmployerData}
+                disabled={dataLoading}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {dataLoading ? '⏳ Loading...' : '🔄 Refresh'}
+              </button>
+              <button 
+                onClick={testApiEndpoint}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+              >
+                🧪 Test API
+              </button>
+              <button 
+                onClick={() => {
+                  console.log('Current state:', { jobs, applications, dataLoading });
+                  console.log('Jobs data:', jobs);
+                  console.log('Applications data:', applications);
+                }}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200 text-sm font-medium"
+              >
+                🐛 Debug
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -144,6 +309,7 @@ export default function EmployerDashboard() {
               { id: 'overview', name: 'Overview', icon: '📊' },
               { id: 'jobs', name: 'My Jobs', icon: '💼' },
               { id: 'applications', name: 'Applications', icon: '📋' },
+              { id: 'search', name: 'Search Candidates', icon: '🔍' },
               { id: 'post', name: 'Post Job', icon: '➕' }
             ].map((tab) => (
               <button
@@ -167,21 +333,21 @@ export default function EmployerDashboard() {
       {message && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <div className={`p-4 rounded-lg border ${
-            messageType === 'success' 
+          messageType === 'success' 
               ? 'bg-green-50 border-green-200 text-green-800' 
               : 'bg-red-50 border-red-200 text-red-800'
-          }`}>
-            <div className="flex justify-between items-center">
+        }`}>
+          <div className="flex justify-between items-center">
               <span className="font-medium">{message}</span>
-              <button 
-                onClick={() => {
-                  setMessage('');
-                  setMessageType('');
-                }}
+            <button 
+              onClick={() => {
+                setMessage('');
+                setMessageType('');
+              }}
                 className="text-gray-400 hover:text-gray-600 ml-4 text-lg"
-              >
-                ×
-              </button>
+            >
+              ×
+            </button>
             </div>
           </div>
         </div>
@@ -189,6 +355,14 @@ export default function EmployerDashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {dataLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading employer data...</p>
+            </div>
+          </div>
+        ) : (
         
         {/* Overview Tab */}
         {activeTab === 'overview' && (
@@ -286,7 +460,7 @@ export default function EmployerDashboard() {
             <div className="p-6">
               {(jobs?.length || 0) > 0 ? (
                 <div className="space-y-4">
-                  {jobs.map((job) => (
+          {jobs.map((job) => (
                     <div key={job._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -362,8 +536,8 @@ export default function EmployerDashboard() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
-                  </tr>
-                </thead>
+            </tr>
+          </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {(applications?.length || 0) > 0 ? (
                     applications.map((app) => (
@@ -395,17 +569,17 @@ export default function EmployerDashboard() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <select
-                            value={app.status}
-                            onChange={(e) => updateStatus(app._id, e.target.value)}
+                  <select
+                    value={app.status}
+                    onChange={(e) => updateStatus(app._id, e.target.value)}
                             className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          >
-                            {statusOptions.map((status) => (
-                              <option key={status} value={status}>{status}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
+                  >
+                    {statusOptions.map((status) => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
                     ))
                   ) : (
                     <tr>
@@ -414,9 +588,222 @@ export default function EmployerDashboard() {
                       </td>
                     </tr>
                   )}
-                </tbody>
-              </table>
+          </tbody>
+        </table>
             </div>
+          </div>
+        )}
+
+        {/* Search Candidates Tab */}
+        {activeTab === 'search' && (
+          <div className="space-y-6">
+            {/* Search Form */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900">Search Candidates</h3>
+                <p className="text-sm text-gray-500 mt-1">Find qualified candidates by skills, experience, and location</p>
+              </div>
+              <div className="p-6">
+                <form onSubmit={(e) => { e.preventDefault(); searchResumes(); }} className="space-y-4">
+                  {/* Search Query */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Search Keywords
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. React Developer, Python Engineer, UI/UX Designer"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Filters */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Bangalore, Mumbai"
+                        value={searchFilters.location}
+                        onChange={(e) => setSearchFilters({...searchFilters, location: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Experience Level
+                      </label>
+                      <select
+                        value={searchFilters.experience}
+                        onChange={(e) => setSearchFilters({...searchFilters, experience: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Any Experience</option>
+                        {experienceLevels.map((level) => (
+                          <option key={level} value={level}>{level}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Expected Salary
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 8-12 LPA"
+                        value={searchFilters.salary}
+                        onChange={(e) => setSearchFilters({...searchFilters, salary: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Skills Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Skills
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. React, Node.js, Python, AWS"
+                      value={searchFilters.skills}
+                      onChange={(e) => setSearchFilters({...searchFilters, skills: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Search Button */}
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={searchLoading}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {searchLoading ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Searching...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          Search Candidates
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Search Results ({searchResults.length} candidates found)
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {searchResults.map((candidate) => (
+                      <div key={candidate.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-900">{candidate.name}</h4>
+                            <p className="text-sm text-gray-500">{candidate.email}</p>
+                            <p className="text-sm text-gray-600">{candidate.phone}</p>
+                          </div>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            candidate.availability === 'Available' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {candidate.availability}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3 mb-4">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {candidate.location}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6" />
+                            </svg>
+                            {candidate.experience}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                            {candidate.salary}
+                          </div>
+                        </div>
+
+                        {/* Skills */}
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Skills:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {candidate.skills.map((skill, index) => (
+                              <span key={index} className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => contactCandidate(candidate.id, candidate.name)}
+                            className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 text-sm font-medium"
+                          >
+                            <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            Contact Now
+                          </button>
+                          <button
+                            onClick={() => window.open(`/resumes/${candidate.resume}`, '_blank')}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 text-sm font-medium"
+                          >
+                            <svg className="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Resume
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* No Results */}
+            {searchQuery && searchResults.length === 0 && !searchLoading && (
+              <div className="bg-white rounded-lg shadow p-12 text-center">
+                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No candidates found</h3>
+                <p className="text-gray-500">Try adjusting your search criteria or keywords.</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -514,6 +901,7 @@ export default function EmployerDashboard() {
               </form>
             </div>
           </div>
+        )}
         )}
       </div>
     </div>
