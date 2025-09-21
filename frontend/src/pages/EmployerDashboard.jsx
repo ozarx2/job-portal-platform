@@ -363,9 +363,9 @@ export default function EmployerDashboard() {
             </div>
           </div>
         ) : (
-        
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
+          <>
+            {/* Overview Tab */}
+            {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -902,6 +902,7 @@ export default function EmployerDashboard() {
             </div>
           </div>
         )}
+          </>
         )}
       </div>
     </div>
