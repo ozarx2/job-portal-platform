@@ -430,14 +430,14 @@ export default function CandidateDashboard() {
   };
 
   // Helper functions
-  const filteredJobs = jobs.filter(job => 
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.location.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredJobs = (jobs || []).filter(job => 
+    job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job?.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job?.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredApplications = applications.filter(app => 
-    filterStatus === 'all' || app.status === filterStatus
+  const filteredApplications = (applications || []).filter(app => 
+    filterStatus === 'all' || app?.status === filterStatus
   );
 
   // Loading spinner component
@@ -498,11 +498,11 @@ export default function CandidateDashboard() {
             </div>
             <div className="flex items-center space-x-6">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 text-center">
-                <div className="text-2xl font-bold text-white">{applications.length}</div>
+                <div className="text-2xl font-bold text-white">{applications?.length || 0}</div>
                 <div className="text-sm text-blue-100">Applications</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 text-center">
-                <div className="text-2xl font-bold text-white">{selectedJobs.length}</div>
+                <div className="text-2xl font-bold text-white">{selectedJobs?.length || 0}</div>
                 <div className="text-sm text-blue-100">Selected</div>
               </div>
               {profile.image && (
@@ -663,7 +663,7 @@ export default function CandidateDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Applications</h3>
-                        <p className="text-4xl font-bold text-blue-600">{applications.length}</p>
+                        <p className="text-4xl font-bold text-blue-600">{applications?.length || 0}</p>
                       </div>
                       <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
                         <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -683,7 +683,7 @@ export default function CandidateDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Selected Jobs</h3>
-                        <p className="text-4xl font-bold text-green-600">{selectedJobs.length}</p>
+                        <p className="text-4xl font-bold text-green-600">{selectedJobs?.length || 0}</p>
                       </div>
                       <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                         <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -703,7 +703,7 @@ export default function CandidateDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Available Jobs</h3>
-                        <p className="text-4xl font-bold text-purple-600">{jobs.length}</p>
+                        <p className="text-4xl font-bold text-purple-600">{jobs?.length || 0}</p>
                       </div>
                       <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
                         <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -722,7 +722,7 @@ export default function CandidateDashboard() {
               )}
             </div>
 
-            {selectedJobs.length > 0 && (
+            {(selectedJobs?.length || 0) > 0 && (
               <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
                   <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -731,12 +731,12 @@ export default function CandidateDashboard() {
                   Selected for Onboarding
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedJobs.map((job) => (
-                    <div key={job._id} className="flex justify-between items-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 transform transition-all duration-300 hover:scale-105 hover:shadow-md">
+                  {(selectedJobs || []).map((job) => (
+                    <div key={job?._id || Math.random()} className="flex justify-between items-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 transform transition-all duration-300 hover:scale-105 hover:shadow-md">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 text-lg mb-1">{job.title}</h4>
-                        <p className="text-gray-600 mb-2">{job.company}</p>
-                        <p className="text-sm text-gray-500">{job.location}</p>
+                        <h4 className="font-semibold text-gray-900 text-lg mb-1">{job?.title || 'N/A'}</h4>
+                        <p className="text-gray-600 mb-2">{job?.company || 'N/A'}</p>
+                        <p className="text-sm text-gray-500">{job?.location || 'N/A'}</p>
                       </div>
                       <div className="flex flex-col items-end">
                         <span className="px-4 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-full mb-2">
@@ -784,7 +784,7 @@ export default function CandidateDashboard() {
                 <SkeletonCard />
                 <SkeletonCard />
               </div>
-            ) : filteredJobs.length === 0 ? (
+            ) : (filteredJobs?.length || 0) === 0 ? (
               <div className="text-center py-12">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 01-2 2H10a2 2 0 01-2-2V6m8 0H8" />
@@ -796,12 +796,12 @@ export default function CandidateDashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredJobs.map((job) => (
-                  <div key={job._id} className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                {(filteredJobs || []).map((job) => (
+                  <div key={job?._id || Math.random()} className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{job.title}</h3>
-                        <p className="text-blue-600 font-medium">{job.company}</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{job?.title || 'N/A'}</h3>
+                        <p className="text-blue-600 font-medium">{job?.company || 'N/A'}</p>
                       </div>
                       <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center ml-4">
                         <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -810,7 +810,7 @@ export default function CandidateDashboard() {
                       </div>
                     </div>
                     
-                    <p className="text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed">{job.description}</p>
+                    <p className="text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed">{job?.description || 'No description available'}</p>
                     
                     <div className="space-y-3 mb-6">
                       <div className="flex items-center text-sm text-gray-600">
@@ -818,18 +818,18 @@ export default function CandidateDashboard() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        {job.location}
+                        {job?.location || 'N/A'}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                         </svg>
-                        {job.salary}
+                        {job?.salary || 'N/A'}
                       </div>
                     </div>
                     
                     <button
-                      onClick={() => applyJob(job._id)}
+                      onClick={() => applyJob(job?._id)}
                       disabled={loading.submitting}
                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -889,7 +889,7 @@ export default function CandidateDashboard() {
                   ))}
                 </div>
               </div>
-            ) : filteredApplications.length === 0 ? (
+            ) : (filteredApplications?.length || 0) === 0 ? (
               <div className="text-center py-12">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -913,8 +913,8 @@ export default function CandidateDashboard() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredApplications.map((app) => (
-                        <tr key={app._id} className="hover:bg-gray-50 transition-colors duration-200">
+                      {(filteredApplications || []).map((app) => (
+                        <tr key={app?._id || Math.random()} className="hover:bg-gray-50 transition-colors duration-200">
                           <td className="px-6 py-4">
                             <div className="flex items-center">
                               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
@@ -923,29 +923,29 @@ export default function CandidateDashboard() {
                                 </svg>
                               </div>
                               <div>
-                                <div className="text-sm font-semibold text-gray-900">{app.job?.title || 'N/A'}</div>
-                                <div className="text-sm text-gray-500">{app.job?.location || ''}</div>
+                                <div className="text-sm font-semibold text-gray-900">{app?.job?.title || 'N/A'}</div>
+                                <div className="text-sm text-gray-500">{app?.job?.location || ''}</div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                            {app.job?.company || 'N/A'}
+                            {app?.job?.company || 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                              app.status === 'selected' ? 'bg-green-100 text-green-800' :
-                              app.status === 'shortlisted' ? 'bg-blue-100 text-blue-800' :
-                              app.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              app?.status === 'selected' ? 'bg-green-100 text-green-800' :
+                              app?.status === 'shortlisted' ? 'bg-blue-100 text-blue-800' :
+                              app?.status === 'rejected' ? 'bg-red-100 text-red-800' :
                               'bg-yellow-100 text-yellow-800'
                             }`}>
-                              {app.status}
+                              {app?.status || 'Unknown'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {new Date(app.createdAt).toLocaleDateString()}
+                            {app?.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {app.status === 'selected' && (
+                            {app?.status === 'selected' && (
                               <button
                                 onClick={() => setActiveTab('onboarding')}
                                 className="text-orange-600 hover:text-orange-900 font-medium"
@@ -969,7 +969,7 @@ export default function CandidateDashboard() {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Onboarding Process</h2>
             
-            {selectedJobs.length === 0 ? (
+            {(selectedJobs?.length || 0) === 0 ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -997,9 +997,9 @@ export default function CandidateDashboard() {
                     required
                   >
                     <option value="">Select a job</option>
-                    {selectedJobs.map((job) => (
-                      <option key={job._id} value={job._id}>
-                        {job.title} - {job.company}
+                    {(selectedJobs || []).map((job) => (
+                      <option key={job?._id || Math.random()} value={job?._id}>
+                        {job?.title || 'N/A'} - {job?.company || 'N/A'}
                       </option>
                     ))}
                   </select>
