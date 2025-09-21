@@ -3,17 +3,19 @@ import axios from "axios";
 import ImportLeads from "./ImportLeads";
 import CompanyDebugger from "./CompanyDebugger";
 import LeadConversion from "./LeadConversion";
+import LeadEditModal from "./LeadEditModal";
 
 
 export default function LeadsTable() {
   const [leads, setLeads] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [editingLead, setEditingLead] = useState(null);
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [convertingLead, setConvertingLead] = useState(null);
   const [conversionModalOpen, setConversionModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const limit = 10;
 
@@ -287,6 +289,52 @@ export default function LeadsTable() {
     return actions[status] || [];
   };
 
+  const handleEditLead = (lead) => {
+    setEditingLead(lead);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveLead = async (formData) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+      
+      const response = await axios.put(
+        `${API_BASE_URL}/crm/leads/${editingLead._id}`,
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Update the lead in local state
+        setLeads(leads.map(lead => 
+          lead._id === editingLead._id ? { ...lead, ...formData } : lead
+        ));
+        
+        // Show success message
+        alert('Lead updated successfully!');
+      }
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      alert('Error updating lead. Please try again.');
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditingLead(null);
+  };
+
   return (
     <div className="p-0">
       <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-200 px-6 py-4">
@@ -338,225 +386,63 @@ export default function LeadsTable() {
 
               {/* Name */}
               <td className="px-6 py-4 whitespace-nowrap">
-                {editingLead && editingLead._id === lead._id ? (
-                  <input
-                    value={editingLead.name}
-                    onChange={(e) =>
-                      setEditingLead({ ...editingLead, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <div className="text-sm font-medium text-gray-900">{lead?.name || 'N/A'}</div>
-                )}
+                <div className="text-sm font-medium text-gray-900">{lead?.name || 'N/A'}</div>
               </td>
               
               {/* Phone */}
               <td className="px-6 py-4 whitespace-nowrap">
-                {editingLead && editingLead._id === lead._id ? (
-                  <input
-                    value={editingLead.phone}
-                    onChange={(e) =>
-                      setEditingLead({ ...editingLead, phone: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <div className="text-sm text-gray-900">{lead?.phone || 'N/A'}</div>
-                )}
+                <div className="text-sm text-gray-900">{lead?.phone || 'N/A'}</div>
               </td>
               
               {/* Location */}
               <td className="px-6 py-4 whitespace-nowrap">
-                {editingLead && editingLead._id === lead._id ? (
-                  <input
-                    value={editingLead.location}
-                    onChange={(e) =>
-                      setEditingLead({ ...editingLead, location: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <div className="text-sm text-gray-900">{lead?.location || 'N/A'}</div>
-                )}
+                <div className="text-sm text-gray-900">{lead?.location || 'N/A'}</div>
               </td>
               
               {/* Status */}
               <td className="px-6 py-4 whitespace-nowrap">
-                {editingLead && editingLead._id === lead._id ? (
-                  <select
-                    value={editingLead.status}
-                    onChange={(e) =>
-                      setEditingLead({ ...editingLead, status: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option>New</option>
-                    <option>Contacted</option>
-                    <option>Interested</option>
-                    <option>Shortlisted</option>
-                    <option>Email Collected</option>
-                    <option>Pre-User</option>
-                    <option>User-Created</option>
-                    <option>Converted</option>
-                    <option>Discarded</option>
-                  </select>
-                ) : (
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead?.status)}`}>
-                    {lead?.status || 'Unknown'}
-                  </span>
-                )}
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead?.status)}`}>
+                  {lead?.status || 'Unknown'}
+                </span>
               </td>
 
-              {/* Job Selection - Only visible when status is Shortlisted */}
+              {/* Job Assignment */}
               <td className="px-6 py-4 whitespace-nowrap">
-                {(editingLead && editingLead._id === lead?._id && editingLead.status === 'Shortlisted') || 
-                 (lead?.status === 'Shortlisted' && !editingLead) ? (
-                  <div>
-                    {/* Job Selection */}
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">
-                        <div className="flex items-center space-x-2">
-                          <span>Job:</span>
-                          {editingLead && editingLead._id === lead?._id && editingLead.jobTitle && (
-                            <span className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                              ✓ {editingLead.jobTitle}
-                            </span>
-                          )}
-                        </div>
-                      </label>
-                      <select
-                        value={editingLead?.jobId || lead?.jobId || ''}
-                        onChange={(e) => {
-                          if (editingLead && editingLead._id === lead?._id) {
-                            const selectedJob = jobs.find(j => j._id === e.target.value);
-                            const updatedLead = { 
-                              ...editingLead, 
-                              jobId: e.target.value,
-                              jobTitle: selectedJob?.title || ''
-                            };
-                            console.log('Updated job:', updatedLead);
-                            setEditingLead(updatedLead);
-                            
-                            // Force re-render by updating the leads array
-                            setLeads(prevLeads => 
-                              prevLeads.map(l => 
-                                l._id === lead?._id ? { ...l, jobId: e.target.value, jobTitle: selectedJob?.title || '' } : l
-                              )
-                            );
-                            
-                            // Add visual feedback with a brief highlight
-                            const selectElement = e.target;
-                            selectElement.style.backgroundColor = '#dbeafe';
-                            setTimeout(() => {
-                              selectElement.style.backgroundColor = '';
-                            }, 500);
-                          }
-                        }}
-                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        disabled={!editingLead || editingLead._id !== lead?._id}
-                      >
-                        <option value="">Select Job</option>
-                        {jobs.map(job => (
-                          <option key={job._id} value={job._id}>
-                            {job.title} - {job.location}
-                          </option>
-                        ))}
-                      </select>
+                {lead?.jobTitle ? (
+                  <div className="text-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-700 font-medium">{lead.jobTitle}</span>
                     </div>
                   </div>
-                ) : lead?.status === 'Shortlisted' ? (
-                  <div className="text-sm">
-                    {(editingLead && editingLead._id === lead?._id && editingLead.jobTitle) || lead?.jobTitle ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-gray-700 font-medium">
-                          {(editingLead && editingLead._id === lead?._id) ? editingLead.jobTitle : lead?.jobTitle}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <span className="text-gray-400 italic">Not assigned</span>
-                      </div>
-                    )}
-                  </div>
                 ) : (
-                  <span className="text-gray-400 italic">-</span>
+                  <span className="text-gray-400 italic text-sm">Not assigned</span>
                 )}
               </td>
 
               {/* Actions */}
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                {editingLead && editingLead._id === lead?._id ? (
-                  <div className="flex space-x-2">
-                    <button
-                      className="save-button inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                      onClick={saveEdit}
-                      data-lead-id={editingLead._id}
-                    >
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Save
-                    </button>
-                    <button
-                      className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
-                      onClick={() => setEditingLead(null)}
-                    >
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    <button
-                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                      onClick={() => setEditingLead(lead)}
-                    >
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit
-                    </button>
-                    
-                    {/* Status Update Buttons */}
-                    {getAvailableActions(lead?.status).map((action) => (
-                      <button
-                        key={action}
-                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                        onClick={() => handleStatusUpdate(lead?._id, action)}
-                      >
-                        {action}
-                      </button>
-                    ))}
-                    
-                    {/* Conversion Button */}
-                    {lead?.status === 'Shortlisted' && (
-                      <button
-                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
-                        onClick={() => handleConversionStart(lead)}
-                      >
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        Convert
-                      </button>
-                    )}
-                    
-                    <button
-                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
-                      onClick={() => deleteLead(lead?._id)}
-                    >
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete
-                    </button>
-                  </div>
-                )}
+                <div className="flex space-x-2">
+                  <button
+                    className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                    onClick={() => handleEditLead(lead)}
+                  >
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
+                  
+                  <button
+                    className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                    onClick={() => deleteLead(lead?._id)}
+                  >
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -628,6 +514,15 @@ export default function LeadsTable() {
           setConvertingLead(null);
         }}
         onConversion={handleConversionComplete}
+      />
+
+      {/* Lead Edit Modal */}
+      <LeadEditModal
+        lead={editingLead}
+        isOpen={editModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleSaveLead}
+        jobs={jobs}
       />
     </div>
   );
