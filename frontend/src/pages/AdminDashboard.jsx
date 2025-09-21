@@ -32,10 +32,10 @@ export default function AdminDashboard() {
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [crmDashboard, setCrmDashboard] = useState([]);
   const [crmLoading, setCrmLoading] = useState(false);
-  const [crmFilters, setCrmFilters] = useState({
+  const [crmFilters, setCrmFilters] = useState(() => ({
     date: new Date().toISOString().split('T')[0],
     agentId: ''
-  });
+  }));
 
   useEffect(() => {
     if (token) {
@@ -562,7 +562,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <button
-                  onClick={() => setCrmFilters({ date: new Date().toISOString().split('T')[0], agentId: '' })}
+                  onClick={() => setCrmFilters(prev => ({ ...prev, date: new Date().toISOString().split('T')[0], agentId: '' }))}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
                   Reset to Today

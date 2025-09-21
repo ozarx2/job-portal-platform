@@ -35,22 +35,22 @@ export default function AgentDashboard() {
     }
   }, [token]);
 
-  // Axios instance with auth headers
-  const axiosAuth = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
   // Fetch applications
   useEffect(() => {
     if (activeTab === "view") {
+      const axiosAuth = axios.create({
+        baseURL: API_BASE_URL,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
       axiosAuth
         .get("/applications") // ✅ backend has /api/applications
         .then((res) => setApplications(res.data))
         .catch((err) => console.error("Error fetching applications:", err));
     }
-  }, [activeTab]);
+  }, [activeTab, token]);
 
   // Fetch leads - removed since LeadsTable handles its own fetching
   const fetchLeads = async () => {
