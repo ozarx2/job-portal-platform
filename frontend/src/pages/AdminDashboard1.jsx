@@ -85,7 +85,7 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
-        {users.length > 5 && (
+        {(users?.length || 0) > 5 && (
           <div className="mt-3">
             <button className="px-3 py-2 text-sm rounded bg-blue-50 text-blue-700 hover:bg-blue-100" onClick={() => setShowAllUsers(v => !v)}>
               {showAllUsers ? 'Show less' : 'See more'}
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
         <h2 className="text-xl font-semibold mb-4 text-emerald-700">All Job Listings</h2>
         
         <div className="space-y-4">
-          {jobs.length === 0 ? (
+          {(jobs?.length || 0) === 0 ? (
             <p className="text-gray-500">No jobs found or failed to load.</p>
           ) : (
             (showAllJobs ? jobs : jobs.slice(0, 5)).map((job, idx) => (
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
             ))
           )}
         </div>
-        {jobs.length > 5 && (
+        {(jobs?.length || 0) > 5 && (
           <div className="mt-3">
             <button className="px-3 py-2 text-sm rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100" onClick={() => setShowAllJobs(v => !v)}>
               {showAllJobs ? 'Show less' : 'See more'}
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
-        {applications.length > 5 && (
+        {(applications?.length || 0) > 5 && (
           <div className="mt-3">
             <button className="px-3 py-2 text-sm rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100" onClick={() => setShowAllApps(v => !v)}>
               {showAllApps ? 'Show less' : 'See more'}

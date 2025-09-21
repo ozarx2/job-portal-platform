@@ -217,7 +217,7 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-semibold mb-4 text-emerald-700">All Job Listings</h2>
           
           <div className="space-y-4">
-            {jobs.length === 0 ? (
+            {(jobs?.length || 0) === 0 ? (
               <p className="text-gray-500">No jobs found or failed to load.</p>
             ) : (
               (showAllJobs ? jobs : jobs.slice(0, 5)).map((job, idx) => (
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
               ))
             )}
           </div>
-          {jobs.length > 5 && (
+          {(jobs?.length || 0) > 5 && (
             <div className="mt-3">
               <button className="px-3 py-2 text-sm rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100" onClick={() => setShowAllJobs(v => !v)}>
                 {showAllJobs ? 'Show less' : 'See more'}
@@ -272,7 +272,7 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
-          {applications.length > 5 && (
+          {(applications?.length || 0) > 5 && (
             <div className="mt-3">
               <button className="px-3 py-2 text-sm rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100" onClick={() => setShowAllApps(v => !v)}>
                 {showAllApps ? 'Show less' : 'See more'}
@@ -585,7 +585,7 @@ export default function AdminDashboard() {
               <div className="flex items-center">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">Total Agents</p>
-                  <p className="text-2xl font-bold text-gray-900">{crmDashboard.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{crmDashboard?.length || 0}</p>
                 </div>
                 <div className="p-3bg-blue-100 rounded-full">
                   <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -600,7 +600,7 @@ export default function AdminDashboard() {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">Total Leads</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {crmDashboard.reduce((sum, agent) => sum + agent.totalLeads, 0)}
+                    {(crmDashboard || []).reduce((sum, agent) => sum + (agent?.totalLeads || 0), 0)}
                   </p>
                 </div>
                 <div className="p-3 bg-green-100 rounded-full">
@@ -616,7 +616,7 @@ export default function AdminDashboard() {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">Total Calls</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {crmDashboard.reduce((sum, agent) => sum + agent.calls, 0)}
+                    {(crmDashboard || []).reduce((sum, agent) => sum + (agent?.calls || 0), 0)}
                   </p>
                 </div>
                 <div className="p-3 bg-purple-100 rounded-full">
@@ -632,7 +632,7 @@ export default function AdminDashboard() {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">Total Earnings</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    ₹{crmDashboard.reduce((sum, agent) => sum + agent.earnings, 0)}
+                    ₹{(crmDashboard || []).reduce((sum, agent) => sum + (agent?.earnings || 0), 0)}
                   </p>
                 </div>
                 <div className="p-3 bg-yellow-100 rounded-full">
@@ -675,9 +675,9 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {crmDashboard
-                      .filter(agent => !crmFilters.agentId || agent.agent?.id === crmFilters.agentId)
-                      .sort((a, b) => b.converted - a.converted)
+                    {(crmDashboard || [])
+                      .filter(agent => !crmFilters.agentId || agent?.agent?.id === crmFilters.agentId)
+                      .sort((a, b) => (b?.converted || 0) - (a?.converted || 0))
                       .map((agent, index) => {
                         const conversionRate = agent.totalLeads > 0 ? ((agent.converted / agent.totalLeads) * 100).toFixed(1) : '0.0';
                         const callsPerLead = agent.totalLeads > 0 ? (agent.calls / agent.totalLeads).toFixed(1) : '0.0';
@@ -784,7 +784,7 @@ export default function AdminDashboard() {
                 </table>
               </div>
 
-              {crmDashboard.length === 0 && (
+              {(crmDashboard?.length || 0) === 0 && (
                 <div className="px-6 py-12 text-center">
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
