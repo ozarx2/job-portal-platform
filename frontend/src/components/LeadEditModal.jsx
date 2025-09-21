@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatJobId } from '../utils/jobIdGenerator';
 
 const LeadEditModal = ({ lead, isOpen, onClose, onSave, jobs = [] }) => {
   const [formData, setFormData] = useState({
@@ -163,7 +164,7 @@ const LeadEditModal = ({ lead, isOpen, onClose, onSave, jobs = [] }) => {
               <option value="">Select a job (optional)</option>
               {jobs.map(job => (
                 <option key={job._id} value={job._id}>
-                  {job.title} - {job.company}
+                  {job.title} - {job.company} [{formatJobId(job._id)}]
                 </option>
               ))}
             </select>

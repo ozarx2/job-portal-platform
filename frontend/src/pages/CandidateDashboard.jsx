@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { formatJobId } from '../utils/jobIdGenerator';
 
 export default function CandidateDashboard() {
   const location = useLocation();
@@ -811,7 +812,12 @@ export default function CandidateDashboard() {
                   {(selectedJobs || []).map((job) => (
                     <div key={job?._id || Math.random()} className="flex justify-between items-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 transform transition-all duration-300 hover:scale-105 hover:shadow-md">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 text-lg mb-1">{job?.title || 'N/A'}</h4>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className="font-semibold text-gray-900 text-lg">{job?.title || 'N/A'}</h4>
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            {formatJobId(job?._id)}
+                          </span>
+                        </div>
                         <p className="text-gray-600 mb-2">{job?.company || 'N/A'}</p>
                         <p className="text-sm text-gray-500">{job?.location || 'N/A'}</p>
                       </div>
@@ -877,7 +883,12 @@ export default function CandidateDashboard() {
                   <div key={job?._id || Math.random()} className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{job?.title || 'N/A'}</h3>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="text-xl font-bold text-gray-900 line-clamp-2">{job?.title || 'N/A'}</h3>
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {formatJobId(job?._id)}
+                          </span>
+                        </div>
                         <p className="text-blue-600 font-medium">{job?.company || 'N/A'}</p>
                       </div>
                       <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center ml-4">

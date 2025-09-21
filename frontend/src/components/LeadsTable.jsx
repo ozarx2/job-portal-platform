@@ -4,6 +4,7 @@ import ImportLeads from "./ImportLeads";
 import CompanyDebugger from "./CompanyDebugger";
 import LeadConversion from "./LeadConversion";
 import LeadEditModal from "./LeadEditModal";
+import { formatJobId } from "../utils/jobIdGenerator";
 
 
 export default function LeadsTable() {
@@ -414,6 +415,11 @@ export default function LeadsTable() {
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-gray-700 font-medium">{lead.jobTitle}</span>
                     </div>
+                    {lead?.jobId && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        ID: {formatJobId(lead.jobId)}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <span className="text-gray-400 italic text-sm">Not assigned</span>
