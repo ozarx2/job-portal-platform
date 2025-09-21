@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import apiService from '../services/apiService';
 import dashboardHub from '../services/dashboardHub';
@@ -25,68 +25,121 @@ export default function EmployerDashboard() {
     skills: '',
     salary: ''
   });
+  const [hasSearched, setHasSearched] = useState(false);
+  const [lastSearchTime, setLastSearchTime] = useState(0);
 
   const statusOptions = ['Applied', 'Shortlisted', 'Selected', 'Interviewed', 'Hired', 'Rejected'];
   const jobTypes = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Remote'];
   const experienceLevels = ['0-1 years', '1-3 years', '3-5 years', '5-10 years', '10+ years'];
 
   // Fetch employer-specific data
-  const fetchEmployerData = async () => {
+  const fetchEmployerData = useCallback(async () => {
     setDataLoading(true);
     try {
+      console.log('🔄 Fetching employer data...');
+      
       // Try employer-specific endpoints first
       let jobsRes, applicationsRes;
       
       try {
+        console.log('📋 Trying employer jobs endpoint...');
         jobsRes = await apiService.getEmployerJobs();
+        console.log('✅ Employer jobs response:', jobsRes);
       } catch (error) {
-        console.warn('Employer jobs endpoint failed, trying generic jobs endpoint:', error.message);
-        jobsRes = await apiService.getJobs();
+        console.warn('❌ Employer jobs endpoint failed:', error.message);
+        console.log('📋 Trying generic jobs endpoint...');
+        try {
+          jobsRes = await apiService.getJobs();
+          console.log('✅ Generic jobs response:', jobsRes);
+        } catch (genericError) {
+          console.error('❌ Generic jobs endpoint also failed:', genericError.message);
+          // Set empty array if both fail
+          jobsRes = { data: [] };
+        }
       }
       
       try {
+        console.log('📋 Trying employer applications endpoint...');
         applicationsRes = await apiService.getEmployerApplications();
+        console.log('✅ Employer applications response:', applicationsRes);
       } catch (error) {
-        console.warn('Employer applications endpoint failed, trying generic applications endpoint:', error.message);
-        applicationsRes = await apiService.getApplications();
+        console.warn('❌ Employer applications endpoint failed:', error.message);
+        console.log('📋 Trying generic applications endpoint...');
+        try {
+          applicationsRes = await apiService.getApplications();
+          console.log('✅ Generic applications response:', applicationsRes);
+        } catch (genericError) {
+          console.error('❌ Generic applications endpoint also failed:', genericError.message);
+          // Set empty array if both fail
+          applicationsRes = { data: [] };
+        }
       }
 
-      setJobs(jobsRes.data || []);
-      setApplications(applicationsRes.data || []);
+      const jobsData = jobsRes.data || [];
+      const applicationsData = applicationsRes.data || [];
       
-      console.log('Employer data fetched:', {
-        jobs: jobsRes.data?.length || 0,
-        applications: applicationsRes.data?.length || 0,
-        jobsEndpoint: jobsRes.data?.length > 0 ? 'employer-specific' : 'generic',
-        applicationsEndpoint: applicationsRes.data?.length > 0 ? 'employer-specific' : 'generic'
+      setJobs(jobsData);
+      setApplications(applicationsData);
+      
+      console.log('📊 Final employer data:', {
+        jobs: jobsData.length,
+        applications: applicationsData.length,
+        jobsData: jobsData,
+        applicationsData: applicationsData
       });
+      
+      if (jobsData.length === 0 && applicationsData.length === 0) {
+        setMessage('No data found. This might be normal if you haven\'t posted any jobs yet.');
+        setMessageType('info');
+        setTimeout(() => {
+          setMessage('');
+          setMessageType('');
+        }, 5000);
+      }
     } catch (error) {
-      console.error('Error fetching employer data:', error);
+      console.error('💥 Error fetching employer data:', error);
       setMessage('Error loading data. Please refresh the page.');
       setMessageType('error');
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [setMessage, setMessageType]);
 
-  // Resume search function
-  const searchResumes = async () => {
+  // Resume search function with dynamic filtering
+  const searchResumes = useCallback(async (query = searchQuery, filters = searchFilters) => {
+    if (!query.trim() && !filters.location && !filters.experience && !filters.skills && !filters.salary) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+
+    // Rate limiting: prevent searches more frequent than 300ms
+    const now = Date.now();
+    if (now - lastSearchTime < 300) {
+      return;
+    }
+    setLastSearchTime(now);
+
     setSearchLoading(true);
+    setHasSearched(true);
+    
     try {
       const searchParams = {
-        query: searchQuery,
-        ...searchFilters
+        query: query.trim(),
+        ...filters
       };
+
+      console.log('🔍 Searching candidates with params:', searchParams);
 
       // Try to search candidates/resumes
       const response = await apiService.searchCandidates(searchParams);
       setSearchResults(response.data || []);
       
-      console.log('Resume search results:', response.data?.length || 0);
+      console.log('✅ Resume search results:', response.data?.length || 0);
     } catch (error) {
-      console.error('Error searching resumes:', error);
+      console.error('❌ Error searching resumes:', error);
       
-      // Fallback: simulate search results if API doesn't exist
+      // Enhanced mock results with more realistic data
       const mockResults = [
         {
           id: '1',
@@ -95,10 +148,11 @@ export default function EmployerDashboard() {
           phone: '+91 9876543210',
           location: 'Bangalore',
           experience: '3-5 years',
-          skills: ['React', 'Node.js', 'JavaScript'],
+          skills: ['React', 'Node.js', 'JavaScript', 'TypeScript'],
           resume: 'john_doe_resume.pdf',
           salary: '8-12 LPA',
-          availability: 'Available'
+          availability: 'Available',
+          profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
         },
         {
           id: '2',
@@ -107,10 +161,11 @@ export default function EmployerDashboard() {
           phone: '+91 9876543211',
           location: 'Mumbai',
           experience: '5-10 years',
-          skills: ['Python', 'Django', 'AWS'],
+          skills: ['Python', 'Django', 'AWS', 'PostgreSQL'],
           resume: 'jane_smith_resume.pdf',
           salary: '12-18 LPA',
-          availability: 'Available'
+          availability: 'Available',
+          profileImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
         },
         {
           id: '3',
@@ -119,23 +174,88 @@ export default function EmployerDashboard() {
           phone: '+91 9876543212',
           location: 'Delhi',
           experience: '1-3 years',
-          skills: ['Java', 'Spring Boot', 'MySQL'],
+          skills: ['Java', 'Spring Boot', 'MySQL', 'Microservices'],
           resume: 'mike_johnson_resume.pdf',
           salary: '5-8 LPA',
-          availability: 'Available'
+          availability: 'Available',
+          profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+        },
+        {
+          id: '4',
+          name: 'Sarah Wilson',
+          email: 'sarah@example.com',
+          phone: '+91 9876543213',
+          location: 'Pune',
+          experience: '2-4 years',
+          skills: ['Vue.js', 'PHP', 'Laravel', 'MySQL'],
+          resume: 'sarah_wilson_resume.pdf',
+          salary: '6-10 LPA',
+          availability: 'Available',
+          profileImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+        },
+        {
+          id: '5',
+          name: 'David Chen',
+          email: 'david@example.com',
+          phone: '+91 9876543214',
+          location: 'Chennai',
+          experience: '4-6 years',
+          skills: ['Angular', 'C#', '.NET', 'SQL Server'],
+          resume: 'david_chen_resume.pdf',
+          salary: '10-15 LPA',
+          availability: 'Available',
+          profileImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
         }
       ];
+
+      // Filter mock results based on search criteria
+      let filteredResults = mockResults;
       
-      setSearchResults(mockResults);
-      setMessage('Using demo data - API endpoint not available');
+      if (query.trim()) {
+        filteredResults = filteredResults.filter(candidate => 
+          candidate.name.toLowerCase().includes(query.toLowerCase()) ||
+          candidate.skills.some(skill => skill.toLowerCase().includes(query.toLowerCase()))
+        );
+      }
+      
+      if (filters.location) {
+        filteredResults = filteredResults.filter(candidate => 
+          candidate.location.toLowerCase().includes(filters.location.toLowerCase())
+        );
+      }
+      
+      if (filters.experience) {
+        filteredResults = filteredResults.filter(candidate => 
+          candidate.experience === filters.experience
+        );
+      }
+      
+      if (filters.skills) {
+        const searchSkills = filters.skills.toLowerCase().split(',').map(s => s.trim());
+        filteredResults = filteredResults.filter(candidate =>
+          searchSkills.some(skill => 
+            candidate.skills.some(candidateSkill => 
+              candidateSkill.toLowerCase().includes(skill)
+            )
+          )
+        );
+      }
+      
+      setSearchResults(filteredResults);
+      setMessage(`Found ${filteredResults.length} candidates (Demo data)`);
       setMessageType('info');
+      
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 3000);
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, [searchQuery, searchFilters, lastSearchTime, setMessage, setMessageType]);
 
   // Contact candidate function
-  const contactCandidate = async (candidateId, candidateName) => {
+  const contactCandidate = useCallback(async (candidateId, candidateName) => {
     try {
       // Try to send contact notification
       await apiService.contactCandidate(candidateId);
@@ -151,7 +271,7 @@ export default function EmployerDashboard() {
       setMessage('');
       setMessageType('');
     }, 3000);
-  };
+  }, [setMessage, setMessageType]);
 
   useEffect(() => {
     // Register this dashboard with the hub
@@ -163,10 +283,21 @@ export default function EmployerDashboard() {
     return () => {
       dashboardHub.unregisterDashboard('EmployerDashboard');
     };
-  }, []);
+  }, [fetchEmployerData]);
+
+  // Debounced search effect for dynamic searching
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (activeTab === 'search') {
+        searchResumes(searchQuery, searchFilters);
+      }
+    }, 600); // 600ms delay to prevent excessive calls
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchFilters, activeTab, searchResumes]);
 
   // ✅ Post a new job
-  const postJob = async (e) => {
+  const postJob = useCallback(async (e) => {
     e.preventDefault();
     setLoading(true);
     
@@ -204,10 +335,10 @@ export default function EmployerDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [createJob, jobForm, fetchEmployerData, setMessage, setMessageType]);
 
   // 🔁 Update status
-  const updateStatus = async (appId, newStatus) => {
+  const updateStatus = useCallback(async (appId, newStatus) => {
     console.log('🔄 Updating status:', { appId, newStatus });
     
     const result = await updateApplicationStatus(appId, newStatus);
@@ -232,7 +363,7 @@ export default function EmployerDashboard() {
         setMessageType('');
       }, 5000);
     }
-  };
+  }, [updateApplicationStatus, fetchEmployerData, setMessage, setMessageType]);
 
   // 🧪 Test API endpoint
   const testApiEndpoint = async () => {
@@ -280,12 +411,12 @@ export default function EmployerDashboard() {
               >
                 {dataLoading ? '⏳ Loading...' : '🔄 Refresh'}
               </button>
-              <button 
-                onClick={testApiEndpoint}
+        <button 
+          onClick={testApiEndpoint}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
-              >
-                🧪 Test API
-              </button>
+        >
+          🧪 Test API
+        </button>
               <button 
                 onClick={() => {
                   console.log('Current state:', { jobs, applications, dataLoading });
@@ -604,7 +735,7 @@ export default function EmployerDashboard() {
                 <p className="text-sm text-gray-500 mt-1">Find qualified candidates by skills, experience, and location</p>
               </div>
               <div className="p-6">
-                <form onSubmit={(e) => { e.preventDefault(); searchResumes(); }} className="space-y-4">
+                <div className="space-y-4">
                   {/* Search Query */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -678,32 +809,27 @@ export default function EmployerDashboard() {
                     />
                   </div>
 
-                  {/* Search Button */}
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={searchLoading}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {searchLoading ? (
+                  {/* Search Status */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      {searchLoading && (
                         <>
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          Searching...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                          Search Candidates
+                          <span className="text-sm text-blue-600">Searching...</span>
                         </>
                       )}
-                    </button>
+                      {!searchLoading && hasSearched && (
+                        <span className="text-sm text-gray-500">Search results update automatically as you type</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {searchResults.length > 0 && `${searchResults.length} candidates found`}
+                    </div>
                   </div>
-                </form>
+                </div>
               </div>
             </div>
 
@@ -720,10 +846,22 @@ export default function EmployerDashboard() {
                     {searchResults.map((candidate) => (
                       <div key={candidate.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h4 className="text-lg font-semibold text-gray-900">{candidate.name}</h4>
-                            <p className="text-sm text-gray-500">{candidate.email}</p>
-                            <p className="text-sm text-gray-600">{candidate.phone}</p>
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0">
+                              <img
+                                src={candidate.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&background=3B82F6&color=fff&size=150`}
+                                alt={candidate.name}
+                                className="w-12 h-12 rounded-full object-cover"
+                                onError={(e) => {
+                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&background=3B82F6&color=fff&size=150`;
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-semibold text-gray-900">{candidate.name}</h4>
+                              <p className="text-sm text-gray-500">{candidate.email}</p>
+                              <p className="text-sm text-gray-600">{candidate.phone}</p>
+                            </div>
                           </div>
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             candidate.availability === 'Available' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
@@ -795,13 +933,24 @@ export default function EmployerDashboard() {
             )}
 
             {/* No Results */}
-            {searchQuery && searchResults.length === 0 && !searchLoading && (
+            {hasSearched && searchResults.length === 0 && !searchLoading && (
               <div className="bg-white rounded-lg shadow p-12 text-center">
                 <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No candidates found</h3>
                 <p className="text-gray-500">Try adjusting your search criteria or keywords.</p>
+              </div>
+            )}
+
+            {/* Initial State */}
+            {!hasSearched && (
+              <div className="bg-white rounded-lg shadow p-12 text-center">
+                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Start searching for candidates</h3>
+                <p className="text-gray-500">Enter keywords, skills, or location to find qualified candidates.</p>
               </div>
             )}
           </div>
