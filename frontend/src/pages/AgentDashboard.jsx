@@ -3,9 +3,10 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import ImportLeads from "../components/ImportLeads";
 import LeadsTable from "../components/LeadsTable";
+import ConversionAnalytics from "../components/ConversionAnalytics";
 
 export default function AgentDashboard() {
-  const [activeTab, setActiveTab] = useState("applications");
+  const [activeTab, setActiveTab] = useState("leads");
   const [applications, setApplications] = useState([]);
   const [report, setReport] = useState(() => ({}));
   const [file, setFile] = useState(null);
@@ -120,6 +121,21 @@ export default function AgentDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 mb-8">
           <div className="flex gap-1">
             <button
+              onClick={() => setActiveTab("leads")}
+              className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === "leads"
+                  ? "bg-purple-600 text-white shadow-md transform scale-105"
+                  : "text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Leads
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab("applications")}
               className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                 activeTab === "applications"
@@ -162,6 +178,21 @@ export default function AgentDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Reports
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("analytics")}
+              className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === "analytics"
+                  ? "bg-indigo-600 text-white shadow-md transform scale-105"
+                  : "text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                Analytics
               </div>
             </button>
             <button
@@ -210,6 +241,58 @@ export default function AgentDashboard() {
           </div>
         </div>
       )}
+
+      {/* Leads Management */}
+      {activeTab === "leads" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-purple-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">Lead Management</h2>
+                <p className="text-gray-600">Import, manage, and convert leads to users with job assignment</p>
+                <p className="text-sm text-purple-600 font-medium mt-1">Agent: {agentName}</p>
+              </div>
+            </div>
+            
+            {/* Import Leads Section */}
+            <div className="mb-6">
+              <ImportLeads onImportSuccess={fetchLeads} />
+            </div>
+
+            {/* Leads Table with Conversion */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <LeadsTable />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics */}
+      {activeTab === "analytics" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-indigo-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">Conversion Analytics</h2>
+                <p className="text-gray-600">Track lead conversion performance and job assignment metrics</p>
+              </div>
+            </div>
+            
+            <ConversionAnalytics />
+          </div>
+        </div>
+      )}
+
       {/* Applications Form */}
       {activeTab === "applications" && (
         <div className="space-y-6">

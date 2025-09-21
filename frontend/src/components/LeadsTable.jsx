@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ImportLeads from "./ImportLeads";
 import CompanyDebugger from "./CompanyDebugger";
+import LeadConversion from "./LeadConversion";
 
 
 export default function LeadsTable() {
@@ -11,6 +12,8 @@ export default function LeadsTable() {
   const [editingLead, setEditingLead] = useState(null);
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState([]);
+  const [convertingLead, setConvertingLead] = useState(null);
+  const [conversionModalOpen, setConversionModalOpen] = useState(false);
 
   const limit = 10;
 
@@ -216,6 +219,74 @@ export default function LeadsTable() {
     }
   };
 
+  const handleStatusUpdate = async (leadId, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+
+      await axios.put(
+        `https://api.ozarx.in/api/crm/leads/${leadId}`,
+        { status: newStatus },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Update local state
+      setLeads(leads.map(lead => 
+        lead._id === leadId ? { ...lead, status: newStatus } : lead
+      ));
+    } catch (err) {
+      console.error('Error updating lead status:', err);
+    }
+  };
+
+  const handleConversionStart = (lead) => {
+    setConvertingLead(lead);
+    setConversionModalOpen(true);
+  };
+
+  const handleConversionComplete = (convertedLead) => {
+    // Update the lead in the local state
+    setLeads(leads.map(lead => 
+      lead._id === convertedLead.leadId ? { ...lead, ...convertedLead } : lead
+    ));
+    setConversionModalOpen(false);
+    setConvertingLead(null);
+  };
+
+  const getStatusColor = (status) => {
+    const statusColors = {
+      'New': 'bg-gray-100 text-gray-800',
+      'Contacted': 'bg-blue-100 text-blue-800',
+      'Interested': 'bg-indigo-100 text-indigo-800',
+      'Shortlisted': 'bg-green-100 text-green-800',
+      'Email Collected': 'bg-yellow-100 text-yellow-800',
+      'Pre-User': 'bg-purple-100 text-purple-800',
+      'User-Created': 'bg-emerald-100 text-emerald-800'
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getAvailableActions = (status) => {
+    const actions = {
+      'New': ['Contacted'],
+      'Contacted': ['Interested', 'New'],
+      'Interested': ['Shortlisted', 'Contacted'],
+      'Shortlisted': ['Email Collected'],
+      'Email Collected': ['Convert to Pre-User'],
+      'Pre-User': ['User-Created'],
+      'User-Created': []
+    };
+    return actions[status] || [];
+  };
+
   return (
     <div className="p-0">
       <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-200 px-6 py-4">
@@ -324,19 +395,14 @@ export default function LeadsTable() {
                     <option>Contacted</option>
                     <option>Interested</option>
                     <option>Shortlisted</option>
+                    <option>Email Collected</option>
+                    <option>Pre-User</option>
+                    <option>User-Created</option>
                     <option>Converted</option>
                     <option>Discarded</option>
                   </select>
                 ) : (
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    lead.status === 'New' ? 'bg-blue-100 text-blue-800' :
-                    lead.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800' :
-                    lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
-                    lead.status === 'Shortlisted' ? 'bg-purple-100 text-purple-800' :
-                    lead.status === 'Converted' ? 'bg-emerald-100 text-emerald-800' :
-                    lead.status === 'Discarded' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
                     {lead.status}
                   </span>
                 )}
@@ -445,7 +511,7 @@ export default function LeadsTable() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-1">
                     <button
                       className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                       onClick={() => setEditingLead(lead)}
@@ -455,6 +521,31 @@ export default function LeadsTable() {
                       </svg>
                       Edit
                     </button>
+                    
+                    {/* Status Update Buttons */}
+                    {getAvailableActions(lead.status).map((action) => (
+                      <button
+                        key={action}
+                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                        onClick={() => handleStatusUpdate(lead._id, action)}
+                      >
+                        {action}
+                      </button>
+                    ))}
+                    
+                    {/* Conversion Button */}
+                    {lead.status === 'Shortlisted' && (
+                      <button
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
+                        onClick={() => handleConversionStart(lead)}
+                      >
+                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Convert
+                      </button>
+                    )}
+                    
                     <button
                       className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
                       onClick={() => deleteLead(lead._id)}
@@ -527,6 +618,17 @@ export default function LeadsTable() {
           </div>
         </div>
       </div>
+
+      {/* Lead Conversion Modal */}
+      <LeadConversion
+        lead={convertingLead}
+        open={conversionModalOpen}
+        onClose={() => {
+          setConversionModalOpen(false);
+          setConvertingLead(null);
+        }}
+        onConversion={handleConversionComplete}
+      />
     </div>
   );
 }

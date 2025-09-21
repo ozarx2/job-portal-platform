@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 export default function CandidateDashboard() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -39,6 +41,11 @@ export default function CandidateDashboard() {
   
   // Form validation states
   const [validationErrors, setValidationErrors] = useState(() => ({}));
+  
+  // Welcome message states
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+  const [assignedJob, setAssignedJob] = useState(null);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   // Onboarding documents state
   const [onboardingData, setOnboardingData] = useState(() => ({
@@ -67,7 +74,21 @@ export default function CandidateDashboard() {
     fetchApplications();
     fetchProfile();
     fetchSelectedJobs();
-  }, []);
+    
+    // Handle welcome message from navigation state
+    if (location.state?.welcomeMessage) {
+      setShowWelcomeMessage(true);
+      setAssignedJob(location.state.jobDetails);
+      setIsNewUser(location.state.isNewUser);
+    }
+    
+    // Check for assigned job in localStorage (for pre-users)
+    const assignedJobData = localStorage.getItem('assignedJob');
+    if (assignedJobData && !location.state?.welcomeMessage) {
+      const jobData = JSON.parse(assignedJobData);
+      setAssignedJob(jobData);
+    }
+  }, [location.state]);
 
   const fetchJobs = async () => {
     setLoading(prev => ({ ...prev, jobs: true }));
@@ -650,6 +671,62 @@ export default function CandidateDashboard() {
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
+            {/* Welcome Message for Converted Users */}
+            {showWelcomeMessage && assignedJob && (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6 shadow-lg">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-green-800 mb-2">
+                      🎉 Welcome! You've been pre-selected for a job opportunity!
+                    </h3>
+                    <div className="bg-white rounded-lg p-4 mb-4 border border-green-200">
+                      <h4 className="font-semibold text-gray-900 mb-2">{assignedJob.jobTitle}</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Company:</span>
+                          <p className="text-gray-900">{assignedJob.companyName}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Location:</span>
+                          <p className="text-gray-900">{assignedJob.location}</p>
+                        </div>
+                        {assignedJob.salary && (
+                          <div>
+                            <span className="font-medium text-gray-700">Salary:</span>
+                            <p className="text-gray-900">{assignedJob.salary}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ Auto-Applied
+                        </span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          📧 Welcome Email Sent
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setShowWelcomeMessage(false)}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {loading.applications || loading.selectedJobs || loading.jobs ? (
                 <>
