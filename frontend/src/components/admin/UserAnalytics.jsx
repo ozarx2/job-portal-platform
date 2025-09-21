@@ -12,7 +12,7 @@ const UserAnalytics = ({ token, users }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (users && users.length > 0) {
+    if (users && (users?.length || 0) > 0) {
       calculateAnalytics();
     }
   }, [users]);
@@ -51,10 +51,10 @@ const UserAnalytics = ({ token, users }) => {
     }
 
     setAnalytics({
-      totalUsers: users.length,
+      totalUsers: users?.length || 0,
       usersByRole,
       newUsersThisMonth,
-      activeUsers: users.length, // Assuming all users are active for now
+      activeUsers: users?.length || 0, // Assuming all users are active for now
       userGrowth
     });
   };

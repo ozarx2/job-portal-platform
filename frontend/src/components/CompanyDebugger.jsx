@@ -129,10 +129,10 @@ const CompanyDebugger = () => {
           <div className="text-red-600 text-sm">{error}</div>
         )}
 
-        {testResults.length > 0 && (
+        {(testResults?.length || 0) > 0 && (
           <div className="space-y-2">
             <h4 className="font-medium">Test Results:</h4>
-            {testResults.map((result, index) => (
+            {(testResults || []).map((result, index) => (
               <div key={index} className="p-3 border rounded text-sm">
                 <div className="font-medium">{result.endpoint}</div>
                 <div className={`text-sm ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>

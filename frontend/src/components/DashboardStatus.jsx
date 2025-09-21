@@ -45,11 +45,11 @@ export default function DashboardStatus() {
         )}
       </div>
       
-      {connectedDashboards.length > 0 && (
+      {(connectedDashboards?.length || 0) > 0 && (
         <div className="mt-2 bg-white rounded-lg shadow-lg p-2 text-xs text-gray-600">
           <div className="font-medium mb-1">Connected Dashboards:</div>
           <div className="flex flex-wrap gap-1">
-            {connectedDashboards.map((dashboard, index) => (
+            {(connectedDashboards || []).map((dashboard, index) => (
               <span
                 key={index}
                 className="bg-green-100 text-green-800 px-2 py-1 rounded-full"

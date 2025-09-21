@@ -10,8 +10,8 @@ export default function JobSelect({ jobs, selectedJob, setSelectedJob }) {
         onChange={(e) => setSelectedJob(e.target.value)}
       >
         <option value="">-- Select a job --</option>
-        {Array.isArray(jobs) && jobs.length > 0 ? (
-  jobs.map((job) => (
+        {Array.isArray(jobs) && (jobs?.length || 0) > 0 ? (
+  (jobs || []).map((job) => (
     <option key={job._id} value={job._id}>
       {job.title} ({job._id})
     </option>

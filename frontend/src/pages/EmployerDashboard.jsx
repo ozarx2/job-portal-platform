@@ -73,7 +73,7 @@ export default function EmployerDashboard() {
 
   // 🧪 Test API endpoint
   const testApiEndpoint = async () => {
-    if (applications.length === 0) {
+    if ((applications?.length || 0) === 0) {
       setMessage('No applications to test with');
       setMessageType('error');
       return;

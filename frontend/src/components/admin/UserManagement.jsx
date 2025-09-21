@@ -56,7 +56,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
       });
 
       setUsers(response.data);
-      setTotalPages(Math.ceil(response.data.length / 10));
+      setTotalPages(Math.ceil((response.data?.length || 0) / 10));
     } catch (err) {
       console.error('Error fetching users:', err);
       setError('Failed to load users');

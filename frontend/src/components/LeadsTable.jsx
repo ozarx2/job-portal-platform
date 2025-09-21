@@ -226,9 +226,9 @@ export default function LeadsTable() {
         
         {/* Debug Information */}
         <div className="mt-2 text-xs text-gray-500">
-          <div>Jobs loaded: {jobs.length}</div>
-          {jobs.length > 0 && (
-            <div>Available jobs: {jobs.map(j => j.title).join(', ')}</div>
+          <div>Jobs loaded: {jobs?.length || 0}</div>
+          {(jobs?.length || 0) > 0 && (
+            <div>Available jobs: {(jobs || []).map(j => j?.title || 'N/A').join(', ')}</div>
           )}
         </div>
         

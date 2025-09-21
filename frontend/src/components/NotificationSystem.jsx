@@ -37,7 +37,7 @@ export default function NotificationSystem() {
     }
   };
 
-  if (notifications.length === 0) {
+  if ((notifications?.length || 0) === 0) {
     return null;
   }
 

@@ -53,7 +53,7 @@ export default function ImportLeads({ onImportSuccess }) {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
         
-        if (jsonData.length > 0) {
+        if ((jsonData?.length || 0) > 0) {
           setFileData(jsonData);
           setHeaders(Object.keys(jsonData[0]));
         } else {
@@ -93,16 +93,16 @@ export default function ImportLeads({ onImportSuccess }) {
     });
 
     // Check if we have valid data
-    if (mappedData.length === 0) {
+    if ((mappedData?.length || 0) === 0) {
       alert("❌ No valid leads found. Please ensure you have mapped 'Name' and 'Phone' fields and they contain data.");
       setUploading(false);
       return;
     }
 
     // Show validation summary
-    const invalidRows = fileData.length - mappedData.length;
+    const invalidRows = (fileData?.length || 0) - (mappedData?.length || 0);
     if (invalidRows > 0) {
-      const proceed = confirm(`Found ${mappedData.length} valid leads out of ${fileData.length} rows.\n${invalidRows} rows will be skipped (missing name or phone).\n\nDo you want to proceed with importing ${mappedData.length} leads?`);
+      const proceed = confirm(`Found ${mappedData?.length || 0} valid leads out of ${fileData?.length || 0} rows.\n${invalidRows} rows will be skipped (missing name or phone).\n\nDo you want to proceed with importing ${mappedData?.length || 0} leads?`);
       if (!proceed) {
         setUploading(false);
         return;
@@ -127,7 +127,7 @@ export default function ImportLeads({ onImportSuccess }) {
         message += `\n\n📊 Summary:\n• Total rows processed: ${totalProcessed}\n• Successfully imported: ${count}\n• Skipped (invalid data): ${skipped}`;
       }
       
-      if (errors && errors.length > 0) {
+      if (errors && (errors?.length || 0) > 0) {
         message += `\n\n⚠️ Some issues found:\n${errors.join('\n')}`;
       }
       
@@ -188,16 +188,16 @@ export default function ImportLeads({ onImportSuccess }) {
         <div className="text-blue-600">Processing file...</div>
       )}
 
-      {headers.length > 0 && (
+      {(headers?.length || 0) > 0 && (
         <div className="mt-3">
           <h4 className="font-semibold mb-2">
             Map {fileType.toUpperCase()} Columns to Lead Fields
           </h4>
           <div className="bg-white p-3 rounded border">
             <div className="mb-3 text-sm text-gray-600">
-              Found {fileData.length} rows. Map your columns to the required lead fields:
+              Found {fileData?.length || 0} rows. Map your columns to the required lead fields:
             </div>
-            {headers.map((header) => (
+            {(headers || []).map((header) => (
               <div key={header} className="flex items-center mb-2">
                 <span className="w-40 font-medium">{header}</span>
                 <span className="mx-2">→</span>
@@ -250,7 +250,7 @@ export default function ImportLeads({ onImportSuccess }) {
                 onClick={handleImport}
                 disabled={uploading}
               >
-                {uploading ? "Importing..." : `Import ${fileData.length} Leads`}
+                {uploading ? "Importing..." : `Import ${fileData?.length || 0} Leads`}
               </button>
               <button
                 className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
@@ -268,7 +268,7 @@ export default function ImportLeads({ onImportSuccess }) {
         </div>
       )}
 
-      {headers.length === 0 && !uploading && (
+      {(headers?.length || 0) === 0 && !uploading && (
         <div className="text-gray-500 text-sm">
           Select a CSV or Excel file to see column mapping options
         </div>
