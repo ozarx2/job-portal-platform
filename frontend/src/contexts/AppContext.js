@@ -109,11 +109,14 @@ export function AppProvider({ children }) {
     }));
   };
 
-  // Auto-refresh data every 30 seconds
+  // Auto-refresh data every 30 seconds only when user is logged in
   useEffect(() => {
-    refreshData();
-    const interval = setInterval(refreshData, 30000);
-    return () => clearInterval(interval);
+    const token = localStorage.getItem('token');
+    if (token) {
+      refreshData();
+      const interval = setInterval(refreshData, 30000);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   const value = {

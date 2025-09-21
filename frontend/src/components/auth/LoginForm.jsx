@@ -3,10 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../../api';
 
 const LoginForm = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     email: '',
     password: ''
-  });
+  }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const navItems = ["Home", "About", "Services", "Careers", "Contact", "login"];
 
@@ -48,7 +49,8 @@ const Header = () => {
           <button
   onClick={() => {
     localStorage.removeItem('token');
-    window.location.href = '/login'; // or use useNavigate from react-router
+    localStorage.removeItem('user');
+    navigate('/login');
   }}
   className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
 >
@@ -91,14 +93,5 @@ const Header = () => {
     </header>
   );
 };
-<button
-  onClick={() => {
-    localStorage.removeItem('token');
-    window.location.href = '/login'; // or use useNavigate from react-router
-  }}
-  className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
->
-  Logout
-</button>
 
 export default Header;

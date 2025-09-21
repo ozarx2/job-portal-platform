@@ -3,7 +3,13 @@ import { useApp } from '../contexts/AppContext';
 
 export default function NotificationSystem() {
   const { state, removeNotification } = useApp();
-  const { notifications } = state;
+  const { notifications } = state || {};
+
+  // Don't render on login page or when no token
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return null;
+  }
 
   const getNotificationStyles = (type) => {
     const baseStyles = "fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-lg shadow-lg border-l-4 p-4 mb-2 transform transition-all duration-300 ease-in-out";

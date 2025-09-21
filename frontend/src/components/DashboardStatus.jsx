@@ -3,7 +3,13 @@ import { useApp } from '../contexts/AppContext';
 
 export default function DashboardStatus() {
   const { state } = useApp();
-  const { loading, error, lastUpdated, connectedDashboards } = state;
+  const { loading, error, lastUpdated, connectedDashboards } = state || {};
+
+  // Don't render on login page or when no token
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return null;
+  }
 
   const getStatusColor = () => {
     if (error) return 'bg-red-500';
