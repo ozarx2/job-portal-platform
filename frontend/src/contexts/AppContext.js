@@ -70,7 +70,30 @@ export function AppProvider({ children }) {
 
   const createJob = async (jobData) => {
     try {
-      const response = await apiService.createJob(jobData);
+      // Get current user info to include employer details
+      let currentUser;
+      try {
+        const userRes = await apiService.getCurrentUser();
+        currentUser = userRes.data;
+        console.log('👤 Current user for job creation:', currentUser);
+      } catch (error) {
+        console.warn('❌ Could not get current user for job creation:', error.message);
+      }
+      
+      // Enhance job data with employer information
+      const enhancedJobData = {
+        ...jobData,
+        employer: currentUser?._id,
+        employerId: currentUser?._id,
+        createdBy: currentUser?._id,
+        employerName: currentUser?.name,
+        company: currentUser?.name || jobData.company,
+        userId: currentUser?._id
+      };
+      
+      console.log('📝 Creating job with data:', enhancedJobData);
+      
+      const response = await apiService.createJob(enhancedJobData);
       
       if (response.data.success) {
         setState(prev => ({
@@ -84,6 +107,7 @@ export function AppProvider({ children }) {
         throw new Error('Failed to create job');
       }
     } catch (error) {
+      console.error('💥 Error creating job:', error);
       return { success: false, error: error.message };
     }
   };

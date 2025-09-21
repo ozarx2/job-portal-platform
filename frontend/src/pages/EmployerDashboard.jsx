@@ -38,6 +38,17 @@ export default function EmployerDashboard() {
     try {
       console.log('🔄 Fetching employer data...');
       
+      // Get current user info to identify employer
+      let currentUser;
+      try {
+        const userRes = await apiService.getCurrentUser();
+        currentUser = userRes.data;
+        console.log('👤 Current user:', currentUser);
+      } catch (error) {
+        console.warn('❌ Could not get current user:', error.message);
+        currentUser = null;
+      }
+      
       // Try employer-specific endpoints first
       let jobsRes, applicationsRes;
       
@@ -51,9 +62,30 @@ export default function EmployerDashboard() {
         try {
           jobsRes = await apiService.getJobs();
           console.log('✅ Generic jobs response:', jobsRes);
+          
+          // Filter jobs by current user ID if available
+          if (currentUser && currentUser._id) {
+            const filteredJobs = jobsRes.data?.filter(job => 
+              job.employer === currentUser._id || 
+              job.employerId === currentUser._id ||
+              job.createdBy === currentUser._id ||
+              job.userId === currentUser._id ||
+              job.employerName === currentUser.name ||
+              job.company === currentUser.name
+            ) || [];
+            
+            console.log('🔍 Filtered jobs by employer ID:', {
+              totalJobs: jobsRes.data?.length || 0,
+              filteredJobs: filteredJobs.length,
+              currentUserId: currentUser._id,
+              currentUserName: currentUser.name,
+              filteredJobsData: filteredJobs
+            });
+            
+            jobsRes = { data: filteredJobs };
+          }
         } catch (genericError) {
           console.error('❌ Generic jobs endpoint also failed:', genericError.message);
-          // Set empty array if both fail
           jobsRes = { data: [] };
         }
       }
@@ -68,6 +100,26 @@ export default function EmployerDashboard() {
         try {
           applicationsRes = await apiService.getApplications();
           console.log('✅ Generic applications response:', applicationsRes);
+          
+          // Filter applications by employer if possible
+          if (currentUser && currentUser._id) {
+            const filteredApplications = applicationsRes.data?.filter(app => 
+              app.job?.employer === currentUser._id ||
+              app.job?.employerId === currentUser._id ||
+              app.job?.createdBy === currentUser._id ||
+              app.job?.employerName === currentUser.name ||
+              app.job?.company === currentUser.name
+            ) || [];
+            
+            console.log('🔍 Filtered applications by employer ID:', {
+              totalApplications: applicationsRes.data?.length || 0,
+              filteredApplications: filteredApplications.length,
+              currentUserId: currentUser._id,
+              currentUserName: currentUser.name
+            });
+            
+            applicationsRes = { data: filteredApplications };
+          }
         } catch (genericError) {
           console.error('❌ Generic applications endpoint also failed:', genericError.message);
           // Set empty array if both fail
@@ -84,6 +136,9 @@ export default function EmployerDashboard() {
       console.log('📊 Final employer data:', {
         jobs: jobsData.length,
         applications: applicationsData.length,
+        currentUserId: currentUser?._id,
+        currentUserName: currentUser?.name,
+        currentUserRole: currentUser?.role,
         jobsData: jobsData,
         applicationsData: applicationsData
       });
@@ -95,6 +150,13 @@ export default function EmployerDashboard() {
           setMessage('');
           setMessageType('');
         }, 5000);
+      } else if (jobsData.length > 0) {
+        setMessage(`Found ${jobsData.length} job(s) and ${applicationsData.length} application(s)!`);
+        setMessageType('success');
+        setTimeout(() => {
+          setMessage('');
+          setMessageType('');
+        }, 3000);
       }
     } catch (error) {
       console.error('💥 Error fetching employer data:', error);
