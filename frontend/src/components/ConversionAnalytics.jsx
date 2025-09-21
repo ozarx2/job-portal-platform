@@ -21,7 +21,8 @@ const ConversionAnalytics = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://api.ozarx.in/api/reports/conversion-analytics', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+      const response = await axios.get(`${API_BASE_URL}/reports/conversion-analytics`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

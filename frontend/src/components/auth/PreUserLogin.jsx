@@ -26,7 +26,8 @@ const PreUserLogin = () => {
   const handleTokenLogin = async (token) => {
     try {
       setLoading(true);
-      const response = await axios.post('https://api.ozarx.in/api/auth/preuser-login', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+      const response = await axios.post(`${API_BASE_URL}/auth/preuser-login`, {
         activationToken: token
       });
 
@@ -59,7 +60,8 @@ const PreUserLogin = () => {
     setError('');
 
     try {
-      const response = await axios.post('https://api.ozarx.in/api/auth/preuser-login', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+      const response = await axios.post(`${API_BASE_URL}/auth/preuser-login`, {
         email: formData.email,
         password: formData.password
       });

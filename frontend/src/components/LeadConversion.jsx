@@ -22,7 +22,8 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://api.ozarx.in/api/jobs/active', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+      const response = await axios.get(`${API_BASE_URL}/jobs/active`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setAvailableJobs(response.data || []);
@@ -43,7 +44,8 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      await axios.put(`https://api.ozarx.in/api/crm/leads/${lead._id}/collect-email`, 
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+      await axios.put(`${API_BASE_URL}/crm/leads/${lead._id}/collect-email`, 
         { email },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -71,7 +73,8 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.post(`https://api.ozarx.in/api/crm/leads/${lead._id}/convert-to-preuser`, 
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+      const response = await axios.post(`${API_BASE_URL}/crm/leads/${lead._id}/convert-to-preuser`, 
         { 
           email,
           jobId: selectedJob._id,

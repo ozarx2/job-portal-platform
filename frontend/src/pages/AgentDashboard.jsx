@@ -47,9 +47,12 @@ export default function AgentDashboard() {
       });
       
       axiosAuth
-        .get("/applications") // ✅ backend has /api/applications
-        .then((res) => setApplications(res.data))
-        .catch((err) => console.error("Error fetching applications:", err));
+        .get("/applications")
+        .then((res) => setApplications(res.data || []))
+        .catch((err) => {
+          console.error("Error fetching applications:", err);
+          setApplications([]); // Set empty array on error
+        });
     }
   }, [activeTab, token]);
 
@@ -62,12 +65,22 @@ export default function AgentDashboard() {
   // Fetch report
   useEffect(() => {
     if (activeTab === "reports") {
+      const axiosAuth = axios.create({
+        baseURL: API_BASE_URL,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
       axiosAuth
         .get("/crm/agent/report/me")
-        .then((res) => setReport(res.data))
-        .catch((err) => console.error("Error fetching reports:", err));
+        .then((res) => setReport(res.data || {}))
+        .catch((err) => {
+          console.error("Error fetching reports:", err);
+          setReport({}); // Set empty object on error
+        });
     }
-  }, [activeTab]);
+  }, [activeTab, token]);
 
   // Upload leads (Excel/CSV)
   const handleUpload = async () => {
@@ -76,6 +89,13 @@ export default function AgentDashboard() {
     formData.append("file", file);
 
     try {
+      const axiosAuth = axios.create({
+        baseURL: API_BASE_URL,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
       await axiosAuth.post("/crm/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -103,7 +123,7 @@ export default function AgentDashboard() {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-lg">
-                    {agentName.charAt(0).toUpperCase()}
+                    {agentName?.charAt(0)?.toUpperCase() || 'A'}
                   </span>
                 </div>
                 <div>
@@ -332,10 +352,10 @@ export default function AgentDashboard() {
               </div>
             </div>
             
-            {applications.length > 0 ? (
+            {(applications?.length || 0) > 0 ? (
               <div className="grid gap-4">
-                {applications.map((app, index) => (
-                  <div key={app._id} className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                {(applications || []).map((app, index) => (
+                  <div key={app?._id || index} className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -350,18 +370,18 @@ export default function AgentDashboard() {
                         <div className="flex items-center gap-2 mt-3">
                           <span className="text-sm font-medium text-gray-600">Status:</span>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            app.status === 'Applied' ? 'bg-blue-100 text-blue-800' :
-                            app.status === 'Shortlisted' ? 'bg-yellow-100 text-yellow-800' :
-                            app.status === 'Selected' ? 'bg-green-100 text-green-800' :
-                            app.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                            app?.status === 'Applied' ? 'bg-blue-100 text-blue-800' :
+                            app?.status === 'Shortlisted' ? 'bg-yellow-100 text-yellow-800' :
+                            app?.status === 'Selected' ? 'bg-green-100 text-green-800' :
+                            app?.status === 'Rejected' ? 'bg-red-100 text-red-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {app.status}
+                            {app?.status || 'Unknown'}
                           </span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gray-500">ID: {app._id?.slice(-8)}</p>
+                        <p className="text-xs text-gray-500">ID: {app?._id?.slice(-8) || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -404,7 +424,7 @@ export default function AgentDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-600">Total Leads</p>
-                    <p className="text-2xl font-bold text-blue-800">{report.totalLeads || 0}</p>
+                    <p className="text-2xl font-bold text-blue-800">{report?.totalLeads || 0}</p>
                   </div>
                   <div className="p-2 bg-blue-200 rounded-lg">
                     <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,7 +439,7 @@ export default function AgentDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-yellow-600">Shortlisted</p>
-                    <p className="text-2xl font-bold text-yellow-800">{report.shortlisted || 0}</p>
+                    <p className="text-2xl font-bold text-yellow-800">{report?.shortlisted || 0}</p>
                   </div>
                   <div className="p-2 bg-yellow-200 rounded-lg">
                     <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -434,7 +454,7 @@ export default function AgentDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-green-600">Conversions</p>
-                    <p className="text-2xl font-bold text-green-800">{report.conversions || 0}</p>
+                    <p className="text-2xl font-bold text-green-800">{report?.conversions || 0}</p>
                   </div>
                   <div className="p-2 bg-green-200 rounded-lg">
                     <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -449,7 +469,7 @@ export default function AgentDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-purple-600">Total Calls</p>
-                    <p className="text-2xl font-bold text-purple-800">{report.calls || 0}</p>
+                    <p className="text-2xl font-bold text-purple-800">{report?.calls || 0}</p>
                   </div>
                   <div className="p-2 bg-purple-200 rounded-lg">
                     <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -468,7 +488,7 @@ export default function AgentDashboard() {
                   <p className="text-sm text-emerald-600">Based on calls made (₹1 per call)</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-bold text-emerald-800">₹{(report.calls || 0) * 1}</p>
+                  <p className="text-3xl font-bold text-emerald-800">₹{(report?.calls || 0) * 1}</p>
                   <p className="text-sm text-emerald-600">This month</p>
                 </div>
               </div>
