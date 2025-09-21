@@ -285,12 +285,21 @@ export default function EmployerDashboard() {
     };
   }, [fetchEmployerData]);
 
-  // Debounced search effect for dynamic searching
+  // Debounced search effect for dynamic searching - only when there's actual input
   useEffect(() => {
+    // Only search if there's actual user input
+    const hasInput = searchQuery.trim() || 
+                    searchFilters.location || 
+                    searchFilters.experience || 
+                    searchFilters.skills || 
+                    searchFilters.salary;
+    
+    if (!hasInput || activeTab !== 'search') {
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
-      if (activeTab === 'search') {
-        searchResumes(searchQuery, searchFilters);
-      }
+      searchResumes(searchQuery, searchFilters);
     }, 600); // 600ms delay to prevent excessive calls
 
     return () => clearTimeout(timeoutId);
@@ -809,6 +818,51 @@ export default function EmployerDashboard() {
                     />
                   </div>
 
+                  {/* Search Buttons */}
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSearchFilters({
+                          location: '',
+                          experience: '',
+                          skills: '',
+                          salary: ''
+                        });
+                        setSearchResults([]);
+                        setHasSearched(false);
+                      }}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200 flex items-center"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => searchResumes(searchQuery, searchFilters)}
+                      disabled={searchLoading}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                      {searchLoading ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Searching...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          Search Candidates
+                        </>
+                      )}
+                    </button>
+                  </div>
+
                   {/* Search Status */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -822,7 +876,7 @@ export default function EmployerDashboard() {
                         </>
                       )}
                       {!searchLoading && hasSearched && (
-                        <span className="text-sm text-gray-500">Search results update automatically as you type</span>
+                        <span className="text-sm text-gray-500">Click "Search Candidates" to find matching profiles</span>
                       )}
                     </div>
                     <div className="text-sm text-gray-500">
