@@ -15,6 +15,30 @@ export default function CandidateDashboard() {
   const [resumeFile, setResumeFile] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
+  
+  // Loading states
+  const [loading, setLoading] = useState({
+    jobs: false,
+    applications: false,
+    profile: false,
+    selectedJobs: false,
+    submitting: false
+  });
+  
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  
+  // Error handling states
+  const [retryCount, setRetryCount] = useState({
+    jobs: 0,
+    applications: 0,
+    profile: 0,
+    selectedJobs: 0
+  });
+  
+  // Form validation states
+  const [validationErrors, setValidationErrors] = useState({});
 
   // Onboarding documents state
   const [onboardingData, setOnboardingData] = useState({
@@ -46,15 +70,29 @@ export default function CandidateDashboard() {
   }, []);
 
   const fetchJobs = async () => {
+    setLoading(prev => ({ ...prev, jobs: true }));
     try {
-      const res = await axios.get('https://api.ozarx.in/api/jobs');
+      const res = await axios.get('https://api.ozarx.in/api/jobs', {
+        timeout: 10000 // 10 second timeout
+      });
       setJobs(res.data || []);
+      setRetryCount(prev => ({ ...prev, jobs: 0 })); // Reset retry count on success
     } catch (err) {
       console.error('Error fetching jobs:', err.message);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch jobs';
+      setMessage(`${errorMessage}. ${retryCount.jobs < 3 ? 'Retrying...' : 'Please check your connection and try again.'}`);
+      setMessageType('error');
+      
+      if (retryCount.jobs < 3) {
+        retryFetch(fetchJobs, 'jobs');
+      }
+    } finally {
+      setLoading(prev => ({ ...prev, jobs: false }));
     }
   };
 
   const fetchApplications = async () => {
+    setLoading(prev => ({ ...prev, applications: true }));
     try {
       const res = await axios.get('https://api.ozarx.in/api/applications/me', {
         headers: { Authorization: `Bearer ${token}` },
@@ -62,10 +100,15 @@ export default function CandidateDashboard() {
       setApplications(res.data || []);
     } catch (error) {
       console.error('Error fetching applications:', error);
+      setMessage('Failed to fetch applications. Please try again.');
+      setMessageType('error');
+    } finally {
+      setLoading(prev => ({ ...prev, applications: false }));
     }
   };
 
   const fetchProfile = async () => {
+    setLoading(prev => ({ ...prev, profile: true }));
     try {
       const res = await axios.get('https://api.ozarx.in/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
@@ -73,10 +116,15 @@ export default function CandidateDashboard() {
       setProfile(res.data.user || {});
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setMessage('Failed to fetch profile. Please try again.');
+      setMessageType('error');
+    } finally {
+      setLoading(prev => ({ ...prev, profile: false }));
     }
   };
 
   const fetchSelectedJobs = async () => {
+    setLoading(prev => ({ ...prev, selectedJobs: true }));
     try {
       const res = await axios.get('https://api.ozarx.in/api/applications/selected', {
         headers: { Authorization: `Bearer ${token}` },
@@ -84,6 +132,10 @@ export default function CandidateDashboard() {
       setSelectedJobs(res.data || []);
     } catch (error) {
       console.error('Error fetching selected jobs:', error);
+      setMessage('Failed to fetch selected jobs. Please try again.');
+      setMessageType('error');
+    } finally {
+      setLoading(prev => ({ ...prev, selectedJobs: false }));
     }
   };
 
@@ -101,11 +153,24 @@ export default function CandidateDashboard() {
 
   const updateProfile = async (e) => {
     e.preventDefault();
+    
+    // Validate form data
+    const errors = validateProfile(profile);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setMessage('Please fix the errors below');
+      setMessageType('error');
+      return;
+    }
+    
+    setValidationErrors({});
+    setLoading(prev => ({ ...prev, submitting: true }));
+    
     try {
       const formData = new FormData();
-      formData.append('name', profile.name);
-      formData.append('email', profile.email);
-      formData.append('phone', profile.phone);
+      formData.append('name', profile.name.trim());
+      formData.append('email', profile.email.trim());
+      if (profile.phone) formData.append('phone', profile.phone.trim());
       if (profile.image) formData.append('image', profile.image);
 
       await axios.put('https://api.ozarx.in/api/users/update', formData, {
@@ -113,17 +178,30 @@ export default function CandidateDashboard() {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 15000 // 15 second timeout for file upload
       });
 
       setMessage('Profile updated successfully!');
       setMessageType('success');
+      setValidationErrors({});
     } catch (error) {
-      setMessage('Failed to update profile');
+      console.error('Profile update error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
+      setMessage(errorMessage);
       setMessageType('error');
+    } finally {
+      setLoading(prev => ({ ...prev, submitting: false }));
     }
   };
 
   const uploadResume = async () => {
+    if (!resumeFile) {
+      setMessage('Please select a resume file');
+      setMessageType('error');
+      return;
+    }
+    
+    setLoading(prev => ({ ...prev, submitting: true }));
     try {
       const formData = new FormData();
       formData.append('resume', resumeFile);
@@ -137,25 +215,31 @@ export default function CandidateDashboard() {
 
       setMessage('Resume uploaded successfully!');
       setMessageType('success');
+      setResumeFile(null);
     } catch (error) {
-      setMessage('Failed to upload resume');
+      setMessage('Failed to upload resume. Please try again.');
       setMessageType('error');
+    } finally {
+      setLoading(prev => ({ ...prev, submitting: false }));
     }
   };
 
   const applyJob = async (jobId) => {
+    setLoading(prev => ({ ...prev, submitting: true }));
     try {
       await axios.post(
         `https://api.ozarx.in/api/applications/apply`,
         { jobId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMessage('Application submitted!');
+      setMessage('Application submitted successfully!');
       setMessageType('success');
       fetchApplications();
     } catch (error) {
-      setMessage('Failed to submit application');
+      setMessage('Failed to submit application. Please try again.');
       setMessageType('error');
+    } finally {
+      setLoading(prev => ({ ...prev, submitting: false }));
     }
   };
 
@@ -190,6 +274,19 @@ export default function CandidateDashboard() {
 
   const submitOnboarding = async (e) => {
     e.preventDefault();
+    
+    // Validate onboarding data
+    const errors = validateOnboarding(onboardingData);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setMessage('Please fix the errors below');
+      setMessageType('error');
+      return;
+    }
+    
+    setValidationErrors({});
+    setLoading(prev => ({ ...prev, submitting: true }));
+    
     try {
       const formData = new FormData();
       formData.append('selectedJobId', onboardingData.selectedJobId);
@@ -207,6 +304,7 @@ export default function CandidateDashboard() {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 30000 // 30 second timeout for large file uploads
       });
 
       setMessage('Onboarding documents submitted successfully!');
@@ -231,9 +329,14 @@ export default function CandidateDashboard() {
           bloodGroup: ''
         }
       });
+      setValidationErrors({});
     } catch (error) {
-      setMessage('Failed to submit onboarding documents');
+      console.error('Onboarding submission error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit onboarding documents';
+      setMessage(errorMessage);
       setMessageType('error');
+    } finally {
+      setLoading(prev => ({ ...prev, submitting: false }));
     }
   };
 
@@ -242,23 +345,175 @@ export default function CandidateDashboard() {
     setMessageType('');
   };
 
+  // Validation functions
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+  };
+
+  const validateProfile = (profileData) => {
+    const errors = {};
+    
+    if (!profileData.name || profileData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters long';
+    }
+    
+    if (!profileData.email || !validateEmail(profileData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (profileData.phone && !validatePhone(profileData.phone)) {
+      errors.phone = 'Please enter a valid phone number';
+    }
+    
+    return errors;
+  };
+
+  const validateOnboarding = (onboardingData) => {
+    const errors = {};
+    
+    if (!onboardingData.selectedJobId) {
+      errors.selectedJobId = 'Please select a job';
+    }
+    
+    if (!onboardingData.personalInfo.fullName || onboardingData.personalInfo.fullName.trim().length < 2) {
+      errors.fullName = 'Full name is required';
+    }
+    
+    if (!onboardingData.personalInfo.dateOfBirth) {
+      errors.dateOfBirth = 'Date of birth is required';
+    } else {
+      const birthDate = new Date(onboardingData.personalInfo.dateOfBirth);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      if (age < 18) {
+        errors.dateOfBirth = 'You must be at least 18 years old';
+      }
+    }
+    
+    if (!onboardingData.personalInfo.address || onboardingData.personalInfo.address.trim().length < 10) {
+      errors.address = 'Address must be at least 10 characters long';
+    }
+    
+    if (!onboardingData.personalInfo.emergencyContact || !validatePhone(onboardingData.personalInfo.emergencyContact)) {
+      errors.emergencyContact = 'Please enter a valid emergency contact number';
+    }
+    
+    if (!onboardingData.personalInfo.bloodGroup) {
+      errors.bloodGroup = 'Please select your blood group';
+    }
+    
+    // Check required documents
+    const requiredDocs = ['aadharCard', 'panCard', 'resume', 'marklist', 'bankPassbook', 'passportPhoto'];
+    const missingDocs = requiredDocs.filter(doc => !onboardingData.documents[doc]);
+    if (missingDocs.length > 0) {
+      errors.documents = `Please upload: ${missingDocs.join(', ')}`;
+    }
+    
+    return errors;
+  };
+
+  // Retry functions
+  const retryFetch = async (fetchFunction, key) => {
+    const maxRetries = 3;
+    if (retryCount[key] < maxRetries) {
+      setRetryCount(prev => ({ ...prev, [key]: prev[key] + 1 }));
+      setTimeout(() => {
+        fetchFunction();
+      }, 1000 * (retryCount[key] + 1)); // Exponential backoff
+    }
+  };
+
+  // Helper functions
+  const filteredJobs = jobs.filter(job => 
+    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredApplications = applications.filter(app => 
+    filterStatus === 'all' || app.status === filterStatus
+  );
+
+  // Loading spinner component
+  const LoadingSpinner = ({ size = 'w-6 h-6' }) => (
+    <div className={`animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 ${size}`}></div>
+  );
+
+  // Skeleton loader for cards
+  const SkeletonCard = () => (
+    <div className="bg-white p-6 rounded-lg shadow-sm border animate-pulse">
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+      <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
+      <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+      <div className="h-3 bg-gray-200 rounded w-2/3 mb-4"></div>
+      <div className="h-10 bg-gray-200 rounded"></div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.3s ease-out;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Candidate Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {profile.name || 'Candidate'}</p>
+          <div className="flex justify-between items-center py-8">
+            <div className="transform transition-transform duration-300 hover:scale-105">
+              <h1 className="text-4xl font-bold text-white mb-2">Candidate Dashboard</h1>
+              <p className="text-blue-100 text-lg">
+                Welcome back, <span className="font-semibold">{profile.name || 'Candidate'}</span>
+              </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
-                {applications.length} Applications
+            <div className="flex items-center space-x-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 text-center">
+                <div className="text-2xl font-bold text-white">{applications.length}</div>
+                <div className="text-sm text-blue-100">Applications</div>
               </div>
-              <div className="text-sm text-gray-500">
-                {selectedJobs.length} Selected
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 text-center">
+                <div className="text-2xl font-bold text-white">{selectedJobs.length}</div>
+                <div className="text-sm text-blue-100">Selected</div>
               </div>
+              {profile.image && (
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/20">
+                  <img 
+                    src={URL.createObjectURL(profile.image)} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -266,109 +521,234 @@ export default function CandidateDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation */}
-        <nav className="flex flex-wrap gap-2 mb-8">
+        <nav className="flex flex-wrap gap-3 mb-8">
           <button 
             onClick={() => setActiveTab('dashboard')} 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
               activeTab === 'dashboard' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25' 
+                : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200 hover:border-blue-300 shadow-sm'
             }`}
           >
-            Dashboard
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6a2 2 0 01-2 2H10a2 2 0 01-2-2V5z" />
+              </svg>
+              <span>Dashboard</span>
+            </div>
           </button>
           <button 
             onClick={() => setActiveTab('jobs')} 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
               activeTab === 'jobs' 
-                ? 'bg-green-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                ? 'bg-green-600 text-white shadow-lg shadow-green-600/25' 
+                : 'bg-white text-gray-700 hover:bg-green-50 hover:text-green-600 border border-gray-200 hover:border-green-300 shadow-sm'
             }`}
           >
-            Available Jobs
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 01-2 2H10a2 2 0 01-2-2V6m8 0H8" />
+              </svg>
+              <span>Available Jobs</span>
+            </div>
           </button>
           <button 
             onClick={() => setActiveTab('applications')} 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
               activeTab === 'applications' 
-                ? 'bg-purple-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25' 
+                : 'bg-white text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-gray-200 hover:border-purple-300 shadow-sm'
             }`}
           >
-            My Applications
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>My Applications</span>
+            </div>
           </button>
           <button 
             onClick={() => setActiveTab('onboarding')} 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
               activeTab === 'onboarding' 
-                ? 'bg-orange-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/25' 
+                : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-200 hover:border-orange-300 shadow-sm'
             }`}
           >
-            Onboarding
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span>Onboarding</span>
+            </div>
           </button>
           <button 
             onClick={() => setActiveTab('profile')} 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
               activeTab === 'profile' 
-                ? 'bg-indigo-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25' 
+                : 'bg-white text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 hover:border-indigo-300 shadow-sm'
             }`}
           >
-            Profile
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span>Profile</span>
+            </div>
           </button>
         </nav>
 
         {/* Message Display */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${
+          <div className={`mb-6 p-4 rounded-xl border-l-4 shadow-sm animate-slide-in ${
             messageType === 'success' 
-              ? 'bg-green-50 border border-green-200 text-green-800' 
-              : 'bg-red-50 border border-red-200 text-red-800'
+              ? 'bg-green-50 border-green-400 text-green-800' 
+              : 'bg-red-50 border-red-400 text-red-800'
           }`}>
             <div className="flex justify-between items-center">
-              <span>{message}</span>
-              <button 
-                onClick={clearMessage}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ×
-              </button>
+              <div className="flex items-center space-x-3 flex-1">
+                {messageType === 'success' ? (
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                )}
+                <span className="font-medium">{message}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {messageType === 'error' && (retryCount.jobs > 0 || retryCount.applications > 0 || retryCount.profile > 0 || retryCount.selectedJobs > 0) && (
+                  <button
+                    onClick={() => {
+                      if (retryCount.jobs > 0) fetchJobs();
+                      if (retryCount.applications > 0) fetchApplications();
+                      if (retryCount.profile > 0) fetchProfile();
+                      if (retryCount.selectedJobs > 0) fetchSelectedJobs();
+                    }}
+                    className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
+                  >
+                    Retry
+                  </button>
+                )}
+                <button 
+                  onClick={clearMessage}
+                  className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 rounded-full hover:bg-gray-100"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm border">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Applications</h3>
-                <p className="text-3xl font-bold text-blue-600">{applications.length}</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm border">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Selected Jobs</h3>
-                <p className="text-3xl font-bold text-green-600">{selectedJobs.length}</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm border">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Available Jobs</h3>
-                <p className="text-3xl font-bold text-purple-600">{jobs.length}</p>
-              </div>
+              {loading.applications || loading.selectedJobs || loading.jobs ? (
+                <>
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </>
+              ) : (
+                <>
+                  <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Applications</h3>
+                        <p className="text-4xl font-bold text-blue-600">{applications.length}</p>
+                      </div>
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center text-sm text-gray-600">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                      Active applications
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Selected Jobs</h3>
+                        <p className="text-4xl font-bold text-green-600">{selectedJobs.length}</p>
+                      </div>
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center text-sm text-gray-600">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                      Ready for onboarding
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Available Jobs</h3>
+                        <p className="text-4xl font-bold text-purple-600">{jobs.length}</p>
+                      </div>
+                      <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 01-2 2H10a2 2 0 01-2-2V6m8 0H8" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center text-sm text-gray-600">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                      Open positions
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {selectedJobs.length > 0 && (
-              <div className="bg-white p-6 rounded-lg shadow-sm border">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected for Onboarding</h3>
-                <div className="space-y-3">
+              <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                  <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Selected for Onboarding
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {selectedJobs.map((job) => (
-                    <div key={job._id} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                      <div>
-                        <h4 className="font-medium text-gray-900">{job.title}</h4>
-                        <p className="text-sm text-gray-600">{job.company}</p>
+                    <div key={job._id} className="flex justify-between items-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 transform transition-all duration-300 hover:scale-105 hover:shadow-md">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 text-lg mb-1">{job.title}</h4>
+                        <p className="text-gray-600 mb-2">{job.company}</p>
+                        <p className="text-sm text-gray-500">{job.location}</p>
                       </div>
-                      <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                        Selected
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className="px-4 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-full mb-2">
+                          Selected
+                        </span>
+                        <button 
+                          onClick={() => setActiveTab('onboarding')}
+                          className="text-xs text-green-600 hover:text-green-800 font-medium"
+                        >
+                          Start Onboarding →
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -380,70 +760,207 @@ export default function CandidateDashboard() {
         {/* Jobs Tab */}
         {activeTab === 'jobs' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Available Jobs</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {jobs.map((job) => (
-                <div key={job._id} className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{job.title}</h3>
-                  <p className="text-gray-600 mb-3 line-clamp-3">{job.description}</p>
-                  <div className="space-y-2 mb-4">
-                    <p className="text-sm text-gray-500"><strong>Company:</strong> {job.company}</p>
-                    <p className="text-sm text-gray-500"><strong>Salary:</strong> {job.salary}</p>
-                    <p className="text-sm text-gray-500"><strong>Location:</strong> {job.location}</p>
-                  </div>
-                  <button
-                    onClick={() => applyJob(job._id)}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Apply Now
-                  </button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h2 className="text-3xl font-bold text-gray-900">Available Jobs</h2>
+              <div className="w-full sm:w-96">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search jobs, companies, locations..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <svg className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </div>
-              ))}
+              </div>
             </div>
+
+            {loading.jobs ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </div>
+            ) : filteredJobs.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 01-2 2H10a2 2 0 01-2-2V6m8 0H8" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No jobs found</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {searchTerm ? 'Try adjusting your search terms.' : 'No jobs are currently available.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredJobs.map((job) => (
+                  <div key={job._id} className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{job.title}</h3>
+                        <p className="text-blue-600 font-medium">{job.company}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center ml-4">
+                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed">{job.description}</p>
+                    
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {job.location}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                        {job.salary}
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => applyJob(job._id)}
+                      disabled={loading.submitting}
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading.submitting ? (
+                        <>
+                          <LoadingSpinner size="w-4 h-4" />
+                          <span>Applying...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Apply Now</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Applications Tab */}
         {activeTab === 'applications' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">My Applications</h2>
-            <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Applied</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {applications.map((app) => (
-                    <tr key={app._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{app.job?.title || 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {app.job?.company || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          app.status === 'selected' ? 'bg-green-100 text-green-800' :
-                          app.status === 'shortlisted' ? 'bg-blue-100 text-blue-800' :
-                          app.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {app.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(app.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h2 className="text-3xl font-bold text-gray-900">My Applications</h2>
+              <div className="flex gap-4">
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="shortlisted">Shortlisted</option>
+                  <option value="selected">Selected</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
             </div>
+
+            {loading.applications ? (
+              <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+                <div className="animate-pulse space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <div className="h-12 bg-gray-200 rounded w-12"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/6"></div>
+                      </div>
+                      <div className="h-6 bg-gray-200 rounded w-20"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : filteredApplications.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No applications found</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {filterStatus !== 'all' ? 'Try changing the status filter.' : 'You haven\'t applied to any jobs yet.'}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gradient-to-r from-purple-50 to-purple-100">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Job</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Company</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date Applied</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredApplications.map((app) => (
+                        <tr key={app._id} className="hover:bg-gray-50 transition-colors duration-200">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                              </div>
+                              <div>
+                                <div className="text-sm font-semibold text-gray-900">{app.job?.title || 'N/A'}</div>
+                                <div className="text-sm text-gray-500">{app.job?.location || ''}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                            {app.job?.company || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                              app.status === 'selected' ? 'bg-green-100 text-green-800' :
+                              app.status === 'shortlisted' ? 'bg-blue-100 text-blue-800' :
+                              app.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {app.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {new Date(app.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            {app.status === 'selected' && (
+                              <button
+                                onClick={() => setActiveTab('onboarding')}
+                                className="text-orange-600 hover:text-orange-900 font-medium"
+                              >
+                                Start Onboarding
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -648,86 +1165,158 @@ export default function CandidateDashboard() {
 
         {/* Profile Tab */}
         {activeTab === 'profile' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Profile Management</h2>
+          <div className="space-y-8">
+            <h2 className="text-3xl font-bold text-gray-900">Profile Management</h2>
             
             {/* Profile Update */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Profile</h3>
-              <form onSubmit={updateProfile} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <svg className="w-6 h-6 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Update Profile
+              </h3>
+              <form onSubmit={updateProfile} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
                     <input
                       type="text"
                       name="name"
                       value={profile.name}
                       onChange={handleProfileChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
+                        validationErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter your full name"
                       required
                     />
+                    {validationErrors.name && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                     <input
                       type="email"
                       name="email"
                       value={profile.email}
                       onChange={handleProfileChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
+                        validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter your email"
                       required
                     />
+                    {validationErrors.email && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
                     <input
                       type="text"
                       name="phone"
                       value={profile.phone || ''}
                       onChange={handleProfileChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
+                        validationErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter your phone number"
                     />
+                    {validationErrors.phone && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
-                    <input
-                      type="file"
-                      onChange={handleProfileImageChange}
-                      accept="image/*"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Profile Image</label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        onChange={handleProfileImageChange}
+                        accept="image/*"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                      />
+                    </div>
                   </div>
                 </div>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={loading.submitting}
+                  className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save Profile
+                  {loading.submitting ? (
+                    <>
+                      <LoadingSpinner size="w-4 h-4" />
+                      <span>Saving Profile...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Save Profile</span>
+                    </>
+                  )}
                 </button>
               </form>
             </div>
 
             {/* Resume Upload */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Resume</h3>
-              <div className="flex gap-4 items-center">
-                <input 
-                  type="file" 
-                  accept=".pdf" 
-                  onChange={handleResumeUpload}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={uploadResume}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                  Upload Resume
-                </button>
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <svg className="w-6 h-6 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Upload Resume
+              </h3>
+              <div className="space-y-4">
+                <div className="flex gap-4 items-center">
+                  <div className="flex-1">
+                    <input 
+                      type="file" 
+                      accept=".pdf,.doc,.docx" 
+                      onChange={handleResumeUpload}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                      placeholder="Select resume file"
+                    />
+                  </div>
+                  <button
+                    onClick={uploadResume}
+                    disabled={loading.submitting || !resumeFile}
+                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-300 font-semibold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading.submitting ? (
+                      <>
+                        <LoadingSpinner size="w-4 h-4" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span>Upload Resume</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                {resumeFile && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                    <div className="flex items-center space-x-3">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="text-green-800 font-medium">{resumeFile.name}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
