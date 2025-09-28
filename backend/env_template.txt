@@ -1,0 +1,19 @@
+PORT=5000
+MONGO_URI=mongodb+srv://ozarxhr:KBfbR0EsisP4I4or@cluster0.hzykio1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=b28571735fab77c48b368b09bf547939fef6ee05c31a52504905dccef5c9545aa898a8dbcc9bf6eac573b43db31b0a2a8cd0bbf581387a85682ff1e058a00673
+EMAIL_USER=ozarxhr@gmail.com
+EMAIL_PASS=v6Jc54@19731973
+EMAIL_FROM="Ozarx HR ozarxhr@gmail.com"
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+
+# Add your OpenAI API key here:
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Frontend Origins
+FRONTEND_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Session Secret
+SESSION_SECRET=b28571735fab77c48b368b09bf547939fef6ee05c31a52504905dccef5c9545aa898a8dbcc9bf6eac573b43db31b0a2a8cd0bbf581387a85682ff1e058a00673
