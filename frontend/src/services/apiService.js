@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 class ApiService {
   constructor() {
@@ -78,6 +78,9 @@ class ApiService {
   }
 
   async getEmployerJobs() {
+    console.log('🔍 API Service - Making request to /jobs/employer');
+    console.log('🔍 API Base URL:', this.client.defaults.baseURL);
+    console.log('🔍 Request headers:', this.client.defaults.headers);
     return this.client.get('/jobs/employer');
   }
 
@@ -164,6 +167,35 @@ class ApiService {
     return this.client.post('/companies', companyData);
   }
 
+  async updateCompany(companyId, companyData) {
+    return this.client.put(`/companies/${companyId}`, companyData);
+  }
+
+  async deleteCompany(companyId) {
+    return this.client.delete(`/companies/${companyId}`);
+  }
+
+  async getCompany(companyId) {
+    return this.client.get(`/companies/${companyId}`);
+  }
+
+  // Job CRUD operations
+  async updateJob(jobId, jobData) {
+    return this.client.put(`/jobs/${jobId}`, jobData);
+  }
+
+  async deleteJob(jobId) {
+    return this.client.delete(`/jobs/${jobId}`);
+  }
+
+  async getJob(jobId) {
+    return this.client.get(`/jobs/${jobId}`);
+  }
+
+  async postJob(jobData) {
+    return this.client.post('/jobs', jobData);
+  }
+
   // Onboarding endpoints
   async submitOnboarding(formData) {
     return this.client.post('/onboarding/submit', formData, {
@@ -208,6 +240,53 @@ class ApiService {
         status: error.response?.status
       };
     }
+  }
+
+  // Assisted Hiring Service endpoints
+  async getServicePackages() {
+    return this.client.get('/assisted-hiring/packages');
+  }
+
+  async requestAssistedHiring(jobId, servicePackage) {
+    return this.client.post('/assisted-hiring/request', {
+      jobId,
+      servicePackage
+    });
+  }
+
+  async createPaymentIntent(serviceId) {
+    return this.client.post(`/assisted-hiring/${serviceId}/payment-intent`);
+  }
+
+  async confirmPayment(serviceId, paymentIntentId) {
+    return this.client.post(`/assisted-hiring/${serviceId}/confirm-payment`, {
+      paymentIntentId
+    });
+  }
+
+  async getMyServices() {
+    return this.client.get('/assisted-hiring/my-services');
+  }
+
+  async getServiceDetails(serviceId) {
+    return this.client.get(`/assisted-hiring/${serviceId}`);
+  }
+
+  async updateServiceStatus(serviceId, status, notes) {
+    return this.client.put(`/assisted-hiring/${serviceId}/update-status`, {
+      status,
+      notes
+    });
+  }
+
+  async addServiceNote(serviceId, note) {
+    return this.client.post(`/assisted-hiring/${serviceId}/add-note`, {
+      note
+    });
+  }
+
+  async getAllServices() {
+    return this.client.get('/assisted-hiring/admin/all');
   }
 }
 

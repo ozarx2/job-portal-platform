@@ -12,7 +12,7 @@ export default function JobListing() {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get('https://api.ozarx.in/api/jobs');
+      const res = await axios.get('http://localhost:5000/api/jobs');
       setJobs(res.data || []);
     } catch (err) {
       console.error(err);
@@ -24,9 +24,18 @@ export default function JobListing() {
       return setMessage('Please login to apply.');
     }
 
+    // Check if user is a candidate
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (user.role !== 'candidate') {
+        return setMessage(`Only candidates can apply for jobs. Your current role is: ${user.role}`);
+      }
+    }
+
     try {
       await axios.post(
-        `https://api.ozarx.in/api/applications`,
+        `http://localhost:5000/api/applications`,
         { jobId },
         {
           headers: {
@@ -40,6 +49,15 @@ export default function JobListing() {
       console.error(err);
       setMessage(err.response?.data?.msg || 'Application failed.');
     }
+  };
+
+  // Helper function to check if current user is a candidate
+  const isCandidate = () => {
+    const userData = localStorage.getItem('user');
+    if (!userData) return false;
+    
+    const user = JSON.parse(userData);
+    return user.role === 'candidate';
   };
 
   return (
@@ -67,12 +85,15 @@ export default function JobListing() {
               <p className="text-sm text-gray-500">
                 Posted by: {job.postedBy?.email || 'Unknown'}
               </p>
-              <button
-                onClick={() => applyToJob(job._id)}
-                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-              >
-                Apply Now
-              </button>
+              {/* Only show Apply Now button for candidates */}
+              {isCandidate() && (
+                <button
+                  onClick={() => applyToJob(job._id)}
+                  className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                >
+                  Apply Now
+                </button>
+              )}
             </div>
           ))}
         </div>

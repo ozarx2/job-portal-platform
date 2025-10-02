@@ -15,18 +15,36 @@ const JobManagement = () => {
     companyName: '',
     salaryPackage: '',
     lastDate: '',
-    status: 'active'
+    status: 'active',
+    companyId: ''
   });
+  const [companies, setCompanies] = useState([]);
 
   useEffect(() => {
     fetchJobs();
+    fetchCompanies();
   }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/companies', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setCompanies(response.data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
 
   const fetchJobs = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://api.ozarx.in/api/jobs', {
+      const response = await axios.get('http://localhost:5000/api/jobs', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -60,7 +78,7 @@ const JobManagement = () => {
       
       if (editingJob) {
         // Update existing job
-        const response = await axios.put(`https://api.ozarx.in/api/jobs/${editingJob._id}`, formData, {
+        const response = await axios.put(`http://localhost:5000/api/jobs/${editingJob._id}`, formData, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -74,7 +92,7 @@ const JobManagement = () => {
         }
       } else {
         // Create new job
-        const response = await axios.post('https://api.ozarx.in/api/jobs', formData, {
+        const response = await axios.post('http://localhost:5000/api/jobs', formData, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -100,10 +118,12 @@ const JobManagement = () => {
     setFormData({
       title: job.title || '',
       description: job.description || '',
-      companyName: job.company || '',
-      salaryPackage: job.salary || '',
-      lastDate: job.lastDate ? job.lastDate.split('T')[0] : '',
-      status: job.status || 'active'
+      companyName: job.companyId?.name || job.company || job.postedBy?.name || '',
+      salaryPackage: job.salary || (job.salaryRange ? `${job.salaryRange.min}-${job.salaryRange.max}` : ''),
+      lastDate: job.lastDate ? job.lastDate.split('T')[0] : 
+                job.deadline ? job.deadline.split('T')[0] : '',
+      status: job.status || 'active',
+      companyId: job.companyId?._id || ''
     });
     setShowForm(true);
   };
@@ -113,7 +133,7 @@ const JobManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`https://api.ozarx.in/api/jobs/${jobId}`, {
+      const response = await axios.delete(`http://localhost:5000/api/jobs/${jobId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -136,7 +156,8 @@ const JobManagement = () => {
       companyName: '',
       salaryPackage: '',
       lastDate: '',
-      status: 'active'
+      status: 'active',
+      companyId: ''
     });
     setEditingJob(null);
   };
@@ -206,15 +227,20 @@ const JobManagement = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                <input
-                  type="text"
-                  name="companyName"
-                  value={formData.companyName}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                <select
+                  name="companyId"
+                  value={formData.companyId}
                   onChange={handleChange}
-                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                >
+                  <option value="">Select a company</option>
+                  {companies.map((company) => (
+                    <option key={company._id} value={company._id}>
+                      {company.name} ({company.companyId})
+                    </option>
+                  ))}
+                </select>
               </div>
               
               <div>
@@ -312,8 +338,10 @@ const JobManagement = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Title</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salary</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Date</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -324,17 +352,24 @@ const JobManagement = () => {
                 {jobs.map((job) => (
                   <tr key={job._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{job.jobId || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{job.title}</div>
                       <div className="text-sm text-gray-500 truncate max-w-xs">{job.description}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {job.company}
+                      {job.companyId?.name || job.company || job.postedBy?.name || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {job.salary}
+                      {job.companyId?.companyId || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {job.lastDate ? new Date(job.lastDate).toLocaleDateString() : 'N/A'}
+                      {job.salary || (job.salaryRange ? `${job.salaryRange.min}-${job.salaryRange.max}` : 'N/A')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {job.lastDate ? new Date(job.lastDate).toLocaleDateString() : 
+                       job.deadline ? new Date(job.deadline).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import SimpleJobApplicationForm from '../components/SimpleJobApplicationForm';
+import IndividualDocumentUpload from '../components/onboarding/IndividualDocumentUpload';
 import { formatJobId } from '../utils/jobIdGenerator';
+import onboardingService from '../services/onboardingService';
 
 export default function CandidateDashboard() {
   const location = useLocation();
@@ -14,6 +17,7 @@ export default function CandidateDashboard() {
     email: '',
     phone: '',
     image: null,
+    skills: [],
   }));
   const [resumeFile, setResumeFile] = useState(null);
   const [message, setMessage] = useState('');
@@ -25,8 +29,19 @@ export default function CandidateDashboard() {
     applications: false,
     profile: false,
     selectedJobs: false,
-    submitting: false
+    submitting: false,
+    profileStatus: false
   }));
+  
+  const [profileStatus, setProfileStatus] = useState({
+    isComplete: false,
+    missingFields: [],
+    completionPercentage: 0
+  });
+  
+  // Application form state
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,6 +61,11 @@ export default function CandidateDashboard() {
   // Welcome message states
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
   const [assignedJob, setAssignedJob] = useState(null);
+  
+  // Check if candidate has selected/hired applications
+  const hasSelectedOrHiredApplications = applications.some(app => 
+    app.status === 'Selected' || app.status === 'Hired' || app.status === 'Onboarding'
+  );
   const [isNewUser, setIsNewUser] = useState(false);
 
   // Onboarding documents state
@@ -70,11 +90,28 @@ export default function CandidateDashboard() {
 
   const token = localStorage.getItem('token');
 
+  // Helper function to safely get skills as array
+  const getSkillsAsArray = (skills) => {
+    if (!skills) return [];
+    if (Array.isArray(skills)) return skills;
+    if (typeof skills === 'string') {
+      return skills.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    }
+    return [];
+  };
+
+  // Helper function to safely join skills
+  const joinSkills = (skills) => {
+    const skillsArray = getSkillsAsArray(skills);
+    return skillsArray.join(', ');
+  };
+
   useEffect(() => {
     fetchJobs();
     fetchApplications();
     fetchProfile();
     fetchSelectedJobs();
+    fetchProfileStatus();
     
     // Handle welcome message from navigation state
     if (location.state?.welcomeMessage) {
@@ -94,10 +131,10 @@ export default function CandidateDashboard() {
   const fetchJobs = async () => {
     setLoading(prev => ({ ...prev, jobs: true }));
     try {
-      const res = await axios.get('https://api.ozarx.in/api/jobs', {
+      const res = await axios.get('http://localhost:5000/api/jobs', {
         timeout: 10000 // 10 second timeout
       });
-      setJobs(res.data || []);
+      setJobs(res.data.data || []);
       setRetryCount(prev => ({ ...prev, jobs: 0 })); // Reset retry count on success
     } catch (err) {
       console.error('Error fetching jobs:', err.message);
@@ -116,10 +153,22 @@ export default function CandidateDashboard() {
   const fetchApplications = async () => {
     setLoading(prev => ({ ...prev, applications: true }));
     try {
-      const res = await axios.get('https://api.ozarx.in/api/applications/me', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const res = await axios.get(`${API_BASE_URL}/applications/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setApplications(res.data || []);
+      console.log('Applications API Response:', res.data);
+      const applicationsArray = Array.isArray(res.data) ? res.data : [];
+      console.log('Applications array length:', applicationsArray.length);
+      applicationsArray.forEach((app, index) => {
+        console.log(`Application ${index + 1}:`, {
+          id: app._id,
+          status: app.status,
+          jobTitle: app.job?.title,
+          candidate: app.candidate
+        });
+      });
+      setApplications(applicationsArray);
     } catch (error) {
       console.error('Error fetching applications:', error);
       setMessage('Failed to fetch applications. Please try again.');
@@ -132,7 +181,8 @@ export default function CandidateDashboard() {
   const fetchProfile = async () => {
     setLoading(prev => ({ ...prev, profile: true }));
     try {
-      const res = await axios.get('https://api.ozarx.in/api/auth/me', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const res = await axios.get(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setProfile(res.data.user || {});
@@ -148,10 +198,11 @@ export default function CandidateDashboard() {
   const fetchSelectedJobs = async () => {
     setLoading(prev => ({ ...prev, selectedJobs: true }));
     try {
-      const res = await axios.get('https://api.ozarx.in/api/applications/selected', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const res = await axios.get(`${API_BASE_URL}/applications/selected`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSelectedJobs(res.data || []);
+      setSelectedJobs(res.data.selectedJobs || []);
     } catch (error) {
       console.error('Error fetching selected jobs:', error);
       setMessage('Failed to fetch selected jobs. Please try again.');
@@ -161,8 +212,39 @@ export default function CandidateDashboard() {
     }
   };
 
+  const fetchProfileStatus = async () => {
+    setLoading(prev => ({ ...prev, profileStatus: true }));
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      console.log('Fetching profile status from:', `${API_BASE_URL}/applications/profile-status`);
+      const res = await axios.get(`${API_BASE_URL}/applications/profile-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log('Profile status response:', res.data);
+      setProfileStatus(res.data);
+    } catch (error) {
+      console.error('Error fetching profile status:', error);
+      // Set default values if API fails
+      setProfileStatus({
+        isComplete: false,
+        missingFields: [],
+        completionPercentage: 0
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, profileStatus: false }));
+    }
+  };
+
   const handleProfileChange = (e) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // Handle skills field specially - convert comma-separated string to array
+    if (name === 'skills') {
+      const skillsArray = value ? value.split(',').map(s => s.trim()).filter(s => s.length > 0) : [];
+      setProfile({ ...profile, [name]: skillsArray });
+    } else {
+      setProfile({ ...profile, [name]: value });
+    }
   };
 
   const handleProfileImageChange = (e) => {
@@ -193,9 +275,19 @@ export default function CandidateDashboard() {
       formData.append('name', profile.name.trim());
       formData.append('email', profile.email.trim());
       if (profile.phone) formData.append('phone', profile.phone.trim());
+      if (profile.location) formData.append('location', profile.location.trim());
+      if (profile.experience) formData.append('experience', profile.experience.toString());
+      if (profile.education) formData.append('education', profile.education.trim());
+      const skillsArray = getSkillsAsArray(profile.skills);
+      if (skillsArray.length > 0) formData.append('skills', skillsArray.join(', '));
+      if (profile.bio) formData.append('bio', profile.bio.trim());
+      if (profile.website) formData.append('website', profile.website.trim());
+      if (profile.linkedin) formData.append('linkedin', profile.linkedin.trim());
+      if (profile.github) formData.append('github', profile.github.trim());
       if (profile.image) formData.append('image', profile.image);
 
-      await axios.put('https://api.ozarx.in/api/users/update', formData, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      await axios.put(`${API_BASE_URL}/users/profile`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -206,6 +298,8 @@ export default function CandidateDashboard() {
       setMessage('Profile updated successfully!');
       setMessageType('success');
       setValidationErrors({});
+      // Refresh profile status after successful update
+      fetchProfileStatus();
     } catch (error) {
       console.error('Profile update error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
@@ -228,7 +322,8 @@ export default function CandidateDashboard() {
       const formData = new FormData();
       formData.append('resume', resumeFile);
 
-      await axios.post('https://api.ozarx.in/api/users/resume', formData, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      await axios.post(`${API_BASE_URL}/users/resume`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -246,19 +341,78 @@ export default function CandidateDashboard() {
     }
   };
 
-  const applyJob = async (jobId) => {
-    setLoading(prev => ({ ...prev, submitting: true }));
+  const applyJob = (job) => {
+    console.log('Profile Status:', profileStatus);
+    
+    // Check if user is a candidate
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (user.role !== 'candidate') {
+        setMessage(`Only candidates can apply for jobs. Your current role is: ${user.role}`);
+        setMessageType('error');
+        return;
+      }
+    }
+    
+    // TEMPORARILY BYPASS PROFILE COMPLETION CHECK FOR TESTING
+    // Check if profile is complete before showing application form
+    // if (!profileStatus.isComplete && profileStatus.missingFields && profileStatus.missingFields.length > 0) {
+    //   setMessage(`Please complete your profile before applying. Missing: ${profileStatus.missingFields.join(', ')}`);
+    //   setMessageType('warning');
+    //   setActiveTab('profile');
+    //   return;
+    // }
+    
+    // Show application form
+    console.log('Showing application form for job:', job);
+    setSelectedJob(job);
+    setShowApplicationForm(true);
+  };
+
+  const handleApplicationSuccess = (response) => {
+    setMessage('Application submitted successfully!');
+    setMessageType('success');
+    setShowApplicationForm(false);
+    setSelectedJob(null);
+    fetchApplications();
+  };
+
+  const handleApplicationClose = () => {
+    setShowApplicationForm(false);
+    setSelectedJob(null);
+  };
+
+  const handleStartOnboarding = async (application) => {
     try {
-      await axios.post(
-        `https://api.ozarx.in/api/applications/apply`,
-        { jobId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMessage('Application submitted successfully!');
+      setLoading(prev => ({ ...prev, submitting: true }));
+      
+      console.log('Starting onboarding for application:', {
+        applicationId: application._id,
+        applicationStatus: application.status,
+        applicationData: application
+      });
+      
+      // Start onboarding process
+      const result = await onboardingService.startOnboarding(application._id, {
+        startDate: new Date(),
+        assignedHR: null, // Will be assigned by system
+        assignedManager: null // Will be assigned by system
+      });
+      
+      setMessage('Onboarding process started successfully!');
       setMessageType('success');
+      
+      // Switch to onboarding tab to show the new process
+      setActiveTab('onboarding');
+      
+      // Refresh applications to update status
       fetchApplications();
+      
     } catch (error) {
-      setMessage('Failed to submit application. Please try again.');
+      console.error('Error starting onboarding:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to start onboarding process';
+      setMessage(errorMessage);
       setMessageType('error');
     } finally {
       setLoading(prev => ({ ...prev, submitting: false }));
@@ -321,7 +475,8 @@ export default function CandidateDashboard() {
         }
       });
 
-      await axios.post('https://api.ozarx.in/api/onboarding/submit', formData, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      await axios.post(`${API_BASE_URL}/users/onboarding/submit`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -452,15 +607,15 @@ export default function CandidateDashboard() {
   };
 
   // Helper functions
-  const filteredJobs = (jobs || []).filter(job => 
+  const filteredJobs = Array.isArray(jobs) ? jobs.filter(job => 
     job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     job?.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     job?.location?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) : [];
 
-  const filteredApplications = (applications || []).filter(app => 
+  const filteredApplications = Array.isArray(applications) ? applications.filter(app => 
     filterStatus === 'all' || app?.status === filterStatus
-  );
+  ) : [];
 
   // Loading spinner component
   const LoadingSpinner = ({ size = 'w-6 h-6' }) => (
@@ -480,7 +635,7 @@ export default function CandidateDashboard() {
 
   return (
     <>
-      <style jsx>{`
+      <style jsx="true">{`
         @keyframes slideIn {
           from {
             opacity: 0;
@@ -590,21 +745,28 @@ export default function CandidateDashboard() {
               <span>My Applications</span>
             </div>
           </button>
-          <button 
-            onClick={() => setActiveTab('onboarding')} 
-            className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
-              activeTab === 'onboarding' 
-                ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/25' 
-                : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-200 hover:border-orange-300 shadow-sm'
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span>Onboarding</span>
-            </div>
-          </button>
+          {hasSelectedOrHiredApplications && (
+            <button 
+              onClick={() => setActiveTab('onboarding')} 
+              className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                activeTab === 'onboarding' 
+                  ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/25' 
+                  : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-200 hover:border-orange-300 shadow-sm'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span>Onboarding</span>
+                <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
+                  {applications.filter(app => 
+                    app.status === 'Selected' || app.status === 'Hired' || app.status === 'Onboarding'
+                  ).length}
+                </span>
+              </div>
+            </button>
+          )}
           <button 
             onClick={() => setActiveTab('profile')} 
             className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
@@ -664,6 +826,40 @@ export default function CandidateDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Completion Banner */}
+        {!profileStatus.isComplete && profileStatus.missingFields.length > 0 && (
+          <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 p-4 rounded-lg shadow-sm">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-amber-800">
+                  Complete Your Profile to Apply for Jobs
+                </h3>
+                <div className="mt-2 text-sm text-amber-700">
+                  <p>Your profile is {profileStatus.completionPercentage}% complete. Please fill in the following fields:</p>
+                  <ul className="mt-2 list-disc list-inside">
+                    {profileStatus.missingFields.map((field, index) => (
+                      <li key={index}>{field}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-3">
+                  <button
+                    onClick={() => setActiveTab('profile')}
+                    className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors duration-200"
+                  >
+                    Complete Profile
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -822,18 +1018,83 @@ export default function CandidateDashboard() {
                         <p className="text-sm text-gray-500">{job?.location || 'N/A'}</p>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="px-4 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-full mb-2">
-                          Selected
-                        </span>
-                        <button 
-                          onClick={() => setActiveTab('onboarding')}
-                          className="text-xs text-green-600 hover:text-green-800 font-medium"
-                        >
-                          Start Onboarding →
-                        </button>
+                        {(() => {
+                          const application = applications.find(app => app.job?._id === job._id);
+                          if (application?.status === 'Hired') {
+                            return (
+                              <span className="px-4 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-full mb-2">
+                                Hired
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="px-4 py-2 bg-blue-100 text-blue-800 text-sm font-medium rounded-full mb-2">
+                                Selected
+                              </span>
+                            );
+                          }
+                        })()}
+                         {(() => {
+                           const application = applications.find(app => app.job?._id === job._id);
+                           console.log('Dashboard - Job:', job._id, 'Application found:', application);
+                           console.log('Dashboard - Status check:', {
+                             jobId: job._id,
+                             applicationStatus: application?.status,
+                             isHired: application?.status === 'Hired',
+                             isSelected: application?.status === 'Selected'
+                           });
+                           if (application?.status === 'Hired') {
+                             return (
+                               <button 
+                                 onClick={() => handleStartOnboarding(application)}
+                                 disabled={loading.submitting}
+                                 className={`text-xs font-medium ${
+                                   loading.submitting 
+                                     ? 'text-gray-400 cursor-not-allowed' 
+                                     : 'text-green-600 hover:text-green-800'
+                                 }`}
+                               >
+                                 {loading.submitting ? 'Starting...' : 'Start Onboarding →'}
+                               </button>
+                             );
+                           } else if (application?.status === 'Selected') {
+                             return (
+                               <span className="text-xs text-blue-600 font-medium">
+                                 Selected - Awaiting Final Decision
+                               </span>
+                             );
+                           } else {
+                             return (
+                               <span className="text-xs text-gray-500">
+                                 Status: {application?.status || 'No application found'}
+                               </span>
+                             );
+                           }
+                         })()}
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Informational message for candidates without selected applications */}
+            {!hasSelectedOrHiredApplications && applications.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-800 mb-1">
+                      Onboarding Access
+                    </h3>
+                    <p className="text-blue-700">
+                      The onboarding process will become available once an employer marks your application as "Selected" or "Hired".
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -917,7 +1178,7 @@ export default function CandidateDashboard() {
                     </div>
                     
                     <button
-                      onClick={() => applyJob(job?._id)}
+                      onClick={() => applyJob(job)}
                       disabled={loading.submitting}
                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -948,17 +1209,18 @@ export default function CandidateDashboard() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-3xl font-bold text-gray-900">My Applications</h2>
               <div className="flex gap-4">
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="shortlisted">Shortlisted</option>
-                  <option value="selected">Selected</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+                 <select
+                   value={filterStatus}
+                   onChange={(e) => setFilterStatus(e.target.value)}
+                   className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                 >
+                   <option value="all">All Status</option>
+                   <option value="Applied">Applied</option>
+                   <option value="Shortlisted">Shortlisted</option>
+                   <option value="Selected">Selected</option>
+                   <option value="Hired">Hired</option>
+                   <option value="Rejected">Rejected</option>
+                 </select>
               </div>
             </div>
 
@@ -1020,28 +1282,54 @@ export default function CandidateDashboard() {
                             {app?.job?.company || 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                              app?.status === 'selected' ? 'bg-green-100 text-green-800' :
-                              app?.status === 'shortlisted' ? 'bg-blue-100 text-blue-800' :
-                              app?.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
+                             <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                               app?.status === 'Hired' ? 'bg-green-100 text-green-800' :
+                               app?.status === 'Selected' ? 'bg-blue-100 text-blue-800' :
+                               app?.status === 'Shortlisted' ? 'bg-purple-100 text-purple-800' :
+                               app?.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                               'bg-yellow-100 text-yellow-800'
+                             }`}>
                               {app?.status || 'Unknown'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {app?.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'N/A'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {app?.status === 'selected' && (
-                              <button
-                                onClick={() => setActiveTab('onboarding')}
-                                className="text-orange-600 hover:text-orange-900 font-medium"
-                              >
-                                Start Onboarding
-                              </button>
-                            )}
-                          </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                             {(() => {
+                               console.log('Application status check:', {
+                                 appId: app?._id,
+                                 status: app?.status,
+                                 isHired: app?.status === 'Hired',
+                                 isSelected: app?.status === 'Selected'
+                               });
+                               if (app?.status === 'Hired') {
+                                 return (
+                                   <button
+                                     onClick={() => handleStartOnboarding(app)}
+                                     disabled={loading.submitting}
+                                     className={`text-orange-600 hover:text-orange-900 font-medium ${
+                                       loading.submitting ? 'opacity-50 cursor-not-allowed' : ''
+                                     }`}
+                                   >
+                                     {loading.submitting ? 'Starting...' : 'Start Onboarding'}
+                                   </button>
+                                 );
+                               } else if (app?.status === 'Selected') {
+                                 return (
+                                   <span className="text-blue-600 font-medium">
+                                     Selected - Awaiting Final Decision
+                                   </span>
+                                 );
+                               } else {
+                                 return (
+                                   <span className="text-gray-500 text-xs">
+                                     Status: {app?.status || 'Unknown'}
+                                   </span>
+                                 );
+                               }
+                             })()}
+                           </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1055,198 +1343,30 @@ export default function CandidateDashboard() {
         {/* Onboarding Tab */}
         {activeTab === 'onboarding' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Onboarding Process</h2>
-            
-            {(selectedJobs?.length || 0) === 0 ? (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-yellow-800">No Selected Jobs</h3>
-                    <div className="mt-2 text-sm text-yellow-700">
-                      <p>You need to be selected for a job before you can start the onboarding process.</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Onboarding Process</h2>
+              <div className="text-sm text-gray-600">
+                Track your onboarding journey and complete required steps
               </div>
+            </div>
+            
+            {hasSelectedOrHiredApplications ? (
+              <IndividualDocumentUpload userId={profile._id || (token ? JSON.parse(atob(token.split('.')[1])).id : null)} />
             ) : (
-              <form onSubmit={submitOnboarding} className="space-y-8">
-                {/* Job Selection */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Job for Onboarding</h3>
-                  <select
-                    value={onboardingData.selectedJobId}
-                    onChange={(e) => handleOnboardingChange('selectedJobId', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select a job</option>
-                    {(selectedJobs || []).map((job) => (
-                      <option key={job?._id || Math.random()} value={job?._id}>
-                        {job?.title || 'N/A'} - {job?.company || 'N/A'}
-                      </option>
-                    ))}
-                  </select>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+                <div className="flex items-center justify-center mb-4">
+                  <svg className="w-12 h-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
                 </div>
-
-                {/* Personal Information */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                      <input
-                        type="text"
-                        value={onboardingData.personalInfo.fullName}
-                        onChange={(e) => handleOnboardingChange('personalInfo.fullName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                      <input
-                        type="date"
-                        value={onboardingData.personalInfo.dateOfBirth}
-                        onChange={(e) => handleOnboardingChange('personalInfo.dateOfBirth', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                      <textarea
-                        value={onboardingData.personalInfo.address}
-                        onChange={(e) => handleOnboardingChange('personalInfo.address', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows={3}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact</label>
-                      <input
-                        type="text"
-                        value={onboardingData.personalInfo.emergencyContact}
-                        onChange={(e) => handleOnboardingChange('personalInfo.emergencyContact', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Blood Group</label>
-                      <select
-                        value={onboardingData.personalInfo.bloodGroup}
-                        onChange={(e) => handleOnboardingChange('personalInfo.bloodGroup', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      >
-                        <option value="">Select Blood Group</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Document Uploads */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Required Documents</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Aadhar Card */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Aadhar Card</label>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => handleDocumentUpload('aadharCard', e.target.files[0])}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    {/* PAN Card */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">PAN Card</label>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => handleDocumentUpload('panCard', e.target.files[0])}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    {/* Resume */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Resume</label>
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={(e) => handleDocumentUpload('resume', e.target.files[0])}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    {/* Marklist */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Marklist/Transcript</label>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => handleDocumentUpload('marklist', e.target.files[0])}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    {/* Bank Passbook */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Bank Passbook</label>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => handleDocumentUpload('bankPassbook', e.target.files[0])}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    {/* Passport Photo */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Passport Size Photo</label>
-                      <input
-                        type="file"
-                        accept=".jpg,.jpeg,.png"
-                        onChange={(e) => handleDocumentUpload('passportPhoto', e.target.files[0])}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
-                  >
-                    Submit Onboarding Documents
-                  </button>
-                </div>
-              </form>
+                <h3 className="text-lg font-semibold text-yellow-800 mb-2">Onboarding Not Available</h3>
+                <p className="text-yellow-700 mb-4">
+                  The onboarding process is only available for candidates who have been selected or hired for a position.
+                </p>
+                <p className="text-sm text-yellow-600">
+                  Once an employer marks your application as "Selected" or "Hired", you'll be able to access the onboarding process here.
+                </p>
+              </div>
             )}
           </div>
         )}
@@ -1256,15 +1376,14 @@ export default function CandidateDashboard() {
           <div className="space-y-8">
             <h2 className="text-3xl font-bold text-gray-900">Profile Management</h2>
             
-            {/* Profile Update */}
-            <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <svg className="w-6 h-6 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Update Profile
-              </h3>
-              <form onSubmit={updateProfile} className="space-y-6">
+            <form onSubmit={updateProfile} className="space-y-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Personal Information
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
@@ -1273,15 +1392,10 @@ export default function CandidateDashboard() {
                       name="name"
                       value={profile.name}
                       onChange={handleProfileChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
-                        validationErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                       placeholder="Enter your full name"
-                      required
                     />
-                    {validationErrors.name && (
-                      <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-                    )}
+                    {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
@@ -1290,121 +1404,182 @@ export default function CandidateDashboard() {
                       name="email"
                       value={profile.email}
                       onChange={handleProfileChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
-                        validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter your email"
-                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      placeholder="Enter your email address"
                     />
-                    {validationErrors.email && (
-                      <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
-                    )}
+                    {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
                     <input
-                      type="text"
+                      type="tel"
                       name="phone"
-                      value={profile.phone || ''}
+                      value={profile.phone}
                       onChange={handleProfileChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
-                        validationErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                       placeholder="Enter your phone number"
                     />
-                    {validationErrors.phone && (
-                      <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
-                    )}
+                    {validationErrors.phone && <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Profile Image</label>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        onChange={handleProfileImageChange}
-                        accept="image/*"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                      />
-                    </div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={profile.location}
+                      onChange={handleProfileChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      placeholder="Enter your location"
+                    />
+                    {validationErrors.location && <p className="mt-1 text-sm text-red-600">{validationErrors.location}</p>}
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6" />
+                  </svg>
+                  Professional Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Experience Level</label>
+                    <select
+                      name="experience"
+                      value={profile.experience}
+                      onChange={handleProfileChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                    >
+                      <option value="">Select experience level</option>
+                      <option value="0-1 years">0-1 years</option>
+                      <option value="1-2 years">1-2 years</option>
+                      <option value="2-3 years">2-3 years</option>
+                      <option value="3-5 years">3-5 years</option>
+                      <option value="5-7 years">5-7 years</option>
+                      <option value="7-10 years">7-10 years</option>
+                      <option value="10+ years">10+ years</option>
+                    </select>
+                    {validationErrors.experience && <p className="mt-1 text-sm text-red-600">{validationErrors.experience}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Education</label>
+                    <input
+                      type="text"
+                      name="education"
+                      value={profile.education}
+                      onChange={handleProfileChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      placeholder="Enter your education"
+                    />
+                    {validationErrors.education && <p className="mt-1 text-sm text-red-600">{validationErrors.education}</p>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Skills</label>
+                    <input
+                      type="text"
+                      name="skills"
+                      value={joinSkills(profile.skills)}
+                      onChange={handleProfileChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      placeholder="Enter your skills (comma-separated)"
+                    />
+                    {validationErrors.skills && <p className="mt-1 text-sm text-red-600">{validationErrors.skills}</p>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Bio</label>
+                    <textarea
+                      name="bio"
+                      value={profile.bio}
+                      onChange={handleProfileChange}
+                      rows={4}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      placeholder="Tell us about yourself..."
+                    />
+                    {validationErrors.bio && <p className="mt-1 text-sm text-red-600">{validationErrors.bio}</p>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Profile Picture
+                </h3>
+                <div className="flex items-center space-x-6">
+                  <div className="flex-shrink-0">
+                    <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      {profile.image ? (
+                        <img
+                          src={URL.createObjectURL(profile.image)}
+                          alt="Profile"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <svg className="h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/*"
+                      onChange={handleProfileChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">Upload a profile picture (JPG, PNG, GIF)</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={loading.submitting}
-                  className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading.profile}
+                  className={`px-8 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                    loading.profile
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 shadow-lg shadow-indigo-600/25'
+                  }`}
                 >
-                  {loading.submitting ? (
-                    <>
-                      <LoadingSpinner size="w-4 h-4" />
-                      <span>Saving Profile...</span>
-                    </>
+                  {loading.profile ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Updating...</span>
+                    </div>
                   ) : (
-                    <>
+                    <div className="flex items-center space-x-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span>Save Profile</span>
-                    </>
+                      Update Profile
+                    </div>
                   )}
                 </button>
-              </form>
-            </div>
-
-            {/* Resume Upload */}
-            <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <svg className="w-6 h-6 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Upload Resume
-              </h3>
-              <div className="space-y-4">
-                <div className="flex gap-4 items-center">
-                  <div className="flex-1">
-                    <input 
-                      type="file" 
-                      accept=".pdf,.doc,.docx" 
-                      onChange={handleResumeUpload}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                      placeholder="Select resume file"
-                    />
-                  </div>
-                  <button
-                    onClick={uploadResume}
-                    disabled={loading.submitting || !resumeFile}
-                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-300 font-semibold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading.submitting ? (
-                      <>
-                        <LoadingSpinner size="w-4 h-4" />
-                        <span>Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                        <span>Upload Resume</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                {resumeFile && (
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                    <div className="flex items-center space-x-3">
-                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="text-green-800 font-medium">{resumeFile.name}</span>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
+            </form>
           </div>
+        )}
+
+        {/* Job Application Form Modal */}
+        {showApplicationForm && selectedJob && (
+          <SimpleJobApplicationForm
+            jobId={selectedJob._id}
+            jobTitle={selectedJob.title}
+            companyName={selectedJob.company}
+            onClose={handleApplicationClose}
+            onSuccess={handleApplicationSuccess}
+          />
         )}
       </div>
       </div>
     </>
   );
 }
+

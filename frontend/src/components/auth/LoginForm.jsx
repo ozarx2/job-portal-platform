@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../../api';
+import GoogleAuth from './GoogleAuth';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState(() => ({
@@ -9,6 +10,7 @@ const LoginForm = () => {
   }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [googleError, setGoogleError] = useState('');
   
   const navigate = useNavigate();
 
@@ -39,10 +41,21 @@ const LoginForm = () => {
     });
   };
 
+  const handleGoogleSuccess = (user, token) => {
+    setGoogleError('');
+    const dashboardRoute = getDashboardByRole(user.role);
+    navigate(dashboardRoute);
+  };
+
+  const handleGoogleError = (errorMessage) => {
+    setGoogleError(errorMessage);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setGoogleError('');
 
     try {
       const response = await loginUser(formData);
@@ -110,6 +123,12 @@ const LoginForm = () => {
           </div>
         )}
 
+        {googleError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {googleError}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -161,9 +180,32 @@ const LoginForm = () => {
           </button>
         </form>
 
-        
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
+        </div>
 
-        <div className="text-center">
+        {/* Google Sign In */}
+        <GoogleAuth 
+          role="candidate"
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+        />
+
+        <div className="text-center space-y-2">
+          <div className="flex justify-center space-x-4 text-sm">
+            <Link to="/forgot-password" className="text-blue-600 hover:text-blue-500">
+              Forgot Password?
+            </Link>
+            <Link to="/resend-verification" className="text-gray-600 hover:text-gray-500">
+              Resend Verification
+            </Link>
+          </div>
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
             <Link to="/register" className="text-blue-600 hover:text-blue-500">

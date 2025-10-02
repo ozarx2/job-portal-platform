@@ -5,6 +5,9 @@ import { AppProvider } from './contexts/AppContext';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import LoginForm from './components/auth/LoginForm';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
+import ResendVerification from './components/auth/ResendVerification';
 import NotificationSystem from './components/NotificationSystem';
 import DashboardStatus from './components/DashboardStatus';
 import Home from './pages/Home';
@@ -18,6 +21,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AgentDashboard from './pages/AgentDashboard';
 import Reports from './pages/Reports';
 import RoleRedirect from './components/auth/RoleRedirect';
+import NotFound from './components/common/NotFound';
 
 
 function App() {
@@ -33,12 +37,16 @@ function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<LoginForm />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/resend-verification" element={<ResendVerification />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/candidate-dashboard" element={<CandidateDashboard />} />
           <Route path="/employer-dashboard" element={<EmployerDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/agent-dashboard" element={<AgentDashboard/>}/>
           <Route path="/reports" element={<Reports/>}/>
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
         <NotificationSystem />
