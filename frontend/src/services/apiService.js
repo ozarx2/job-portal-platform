@@ -7,8 +7,12 @@ class ApiService {
     this.client = axios.create({
       baseURL: API_BASE_URL,
       timeout: 10000,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
       },
     });
 
@@ -149,6 +153,20 @@ class ApiService {
     return this.client.get('/crm/admin/summary');
   }
 
+  async collectEmail(leadId, emailData) {
+    return this.client.put(`/crm/leads/${leadId}/collect-email`, emailData);
+  }
+
+  async convertToPreUser(leadId, userData) {
+    return this.client.post(`/crm/leads/${leadId}/convert-to-preuser`, userData);
+  }
+
+  async uploadLeads(formData) {
+    return this.client.post('/crm/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+
   // Company endpoints
   async getCompanies() {
     return this.client.get('/companies');
@@ -210,6 +228,59 @@ class ApiService {
 
   async getShortlistedLeads() {
     return this.client.get('/crm/leads?status=Shortlisted');
+  }
+
+  // Onboarding endpoints
+  async submitOnboarding(formData) {
+    return this.client.post('/onboarding/submit', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+
+  async submitSimpleOnboarding(formData) {
+    return this.client.post('/onboarding/simple-submit', formData);
+  }
+
+  async getOnboardingStatus() {
+    return this.client.get('/onboarding/status');
+  }
+
+  async getCandidateOnboarding(userId) {
+    return this.client.get(`/onboarding/candidate/${userId}`);
+  }
+
+  async uploadOnboardingDocument(onboardingId, formData) {
+    return this.client.post(`/onboarding/${onboardingId}/documents`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+
+  async uploadDocument(formData) {
+    return this.client.post('/onboarding/upload-document', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+
+  // Email endpoints
+  async sendForgotPassword(email) {
+    return this.client.post('/email/forgot-password', { email });
+  }
+
+  async sendResetPassword(token, password) {
+    return this.client.post('/email/reset-password', { token, password });
+  }
+
+  async subscribeNewsletter(email) {
+    return this.client.post('/email/newsletter/subscribe', { email });
+  }
+
+  // Reports endpoints
+  async getReportsSummary(filters = {}) {
+    return this.client.get('/reports/summary', { params: filters });
+  }
+
+  async getConversionAnalytics() {
+    return this.client.get('/reports/conversion-analytics');
   }
 
   // Utility methods

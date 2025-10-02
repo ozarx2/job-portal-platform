@@ -303,7 +303,7 @@ export default function LeadsTable() {
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
       
       const response = await axios.put(
         `${API_BASE_URL}/crm/leads/${editingLead._id}`,

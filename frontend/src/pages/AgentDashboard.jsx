@@ -12,8 +12,7 @@ export default function AgentDashboard() {
   const [file, setFile] = useState(null);
   const [agentName, setAgentName] = useState("Agent");
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
 
   const token = localStorage.getItem("token");
 

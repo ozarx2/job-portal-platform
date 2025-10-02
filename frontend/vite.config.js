@@ -8,6 +8,10 @@ export default defineConfig({
     host: 'localhost',
     port: 5173,
     strictPort: true,
+    cors: {
+      origin: ['http://localhost:5173', 'https://api.ozarx.in'],
+      credentials: true,
+    },
     watch: {
       usePolling: true,
     },
@@ -36,4 +40,5 @@ export default defineConfig({
     global: 'globalThis',
   },
   base: './',
+  envPrefix: 'VITE_',
 })

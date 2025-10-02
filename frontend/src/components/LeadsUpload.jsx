@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import apiService from '../services/apiService';
 
 export default function LeadsUpload() {
   const [file, setFile] = useState(null);
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api';
 
   const handleFile = (e) => setFile(e.target.files[0]);
 
@@ -18,9 +17,7 @@ export default function LeadsUpload() {
     fd.append('file', file);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/crm/upload`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
-      });
+      const res = await apiService.uploadLeads(fd);
       alert(`Created ${res.data.createdCount} leads`);
     } catch (err) {
       console.error(err);

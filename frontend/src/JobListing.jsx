@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiService from './services/apiService';
 
 export default function JobListing() {
   const [jobs, setJobs] = useState([]);
@@ -12,7 +12,7 @@ export default function JobListing() {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get('https://api.ozarx.in/api/jobs');
+      const res = await apiService.getJobs();
       setJobs(res.data || []);
     } catch (err) {
       console.error(err);
@@ -34,16 +34,7 @@ export default function JobListing() {
     }
 
     try {
-      await axios.post(
-        `https://api.ozarx.in/api/applications`,
-        { jobId },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      await apiService.applyForJob(jobId);
       setMessage('Application submitted!');
     } catch (err) {
       console.error(err);

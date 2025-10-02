@@ -1,3 +1,14 @@
-VITE_API_URL=http://localhost:5000/api
-VITE_API_BASE_URL=http://localhost:5000/api
-VITE_NODE_ENV=development
+# Production API Configuration
+VITE_API_BASE_URL=https://api.ozarx.in/api
+VITE_API_URL=https://api.ozarx.in/api
+
+# Environment
+VITE_NODE_ENV=production
+
+# CORS Configuration
+VITE_CORS_ORIGIN=https://api.ozarx.in
+
+# Development API Configuration (uncomment for local development)
+# VITE_API_BASE_URL=http://localhost:5000/api
+# VITE_API_URL=http://localhost:5000/api
+# VITE_NODE_ENV=development
