@@ -77,7 +77,7 @@ const JobSearch = ({ onSearchResults, onSearchChange }) => {
         limit: 20
       });
 
-      const response = await axios.get(`http://localhost:5000/api/jobs?${params}`);
+      const response = await axios.get(`https://api.ozarx.in/api/jobs?${params}`);
       
       if (response.data.success) {
         onSearchResults(response.data.data);

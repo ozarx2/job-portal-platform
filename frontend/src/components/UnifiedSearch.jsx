@@ -63,7 +63,7 @@ const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
       // Search from multiple sources in parallel
       const [traditionalResults, aiResults, aggregatedResults] = await Promise.allSettled([
         // Traditional search (internal jobs)
-        axios.get(`http://localhost:5000/api/jobs`, {
+        axios.get(`https://api.ozarx.in/api/jobs`, {
           params: {
             search: searchTerm,
             location: location,

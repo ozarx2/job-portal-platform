@@ -41,7 +41,7 @@ const ResetPassword = () => {
     }
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       const response = await axios.post(`${API_BASE_URL}/auth/reset-password`, {
         token,
         password

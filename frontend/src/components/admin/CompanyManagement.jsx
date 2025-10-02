@@ -43,7 +43,7 @@ const CompanyManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/companies', {
+      const response = await axios.get('https://api.ozarx.in/api/companies', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -111,7 +111,7 @@ const CompanyManagement = () => {
       
       if (editingCompany) {
         // Update existing company
-        const response = await axios.put(`http://localhost:5000/api/companies/${editingCompany._id}`, formDataToSend, {
+        const response = await axios.put(`https://api.ozarx.in/api/companies/${editingCompany._id}`, formDataToSend, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -128,7 +128,7 @@ const CompanyManagement = () => {
         }
       } else {
         // Create new company
-        const response = await axios.post('http://localhost:5000/api/companies', formDataToSend, {
+        const response = await axios.post('https://api.ozarx.in/api/companies', formDataToSend, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -185,7 +185,7 @@ const CompanyManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/companies/${companyId}`, {
+      const response = await axios.delete(`https://api.ozarx.in/api/companies/${companyId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

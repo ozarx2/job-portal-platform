@@ -36,7 +36,7 @@ const DocumentManager = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/documents', {
+      const response = await axios.get('https://api.ozarx.in/api/admin/documents', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -80,7 +80,7 @@ const DocumentManager = () => {
       formData.append('description', uploadData.description);
       formData.append('tags', uploadData.tags);
 
-      const response = await axios.post('http://localhost:5000/api/admin/documents/upload', formData, {
+      const response = await axios.post('https://api.ozarx.in/api/admin/documents/upload', formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -111,7 +111,7 @@ const DocumentManager = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/admin/documents/${documentId}`, {
+      const response = await axios.delete(`https://api.ozarx.in/api/admin/documents/${documentId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -130,7 +130,7 @@ const DocumentManager = () => {
   const handleDownload = async (document) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/admin/documents/${document._id}/download`, {
+      const response = await axios.get(`https://api.ozarx.in/api/admin/documents/${document._id}/download`, {
         headers: { 'Authorization': `Bearer ${token}` },
         responseType: 'blob'
       });

@@ -131,7 +131,7 @@ export default function CandidateDashboard() {
   const fetchJobs = async () => {
     setLoading(prev => ({ ...prev, jobs: true }));
     try {
-      const res = await axios.get('http://localhost:5000/api/jobs', {
+      const res = await axios.get('https://api.ozarx.in/api/jobs', {
         timeout: 10000 // 10 second timeout
       });
       setJobs(res.data.data || []);
@@ -153,7 +153,7 @@ export default function CandidateDashboard() {
   const fetchApplications = async () => {
     setLoading(prev => ({ ...prev, applications: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       const res = await axios.get(`${API_BASE_URL}/applications/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -181,7 +181,7 @@ export default function CandidateDashboard() {
   const fetchProfile = async () => {
     setLoading(prev => ({ ...prev, profile: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       const res = await axios.get(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -198,7 +198,7 @@ export default function CandidateDashboard() {
   const fetchSelectedJobs = async () => {
     setLoading(prev => ({ ...prev, selectedJobs: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       const res = await axios.get(`${API_BASE_URL}/applications/selected`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -215,7 +215,7 @@ export default function CandidateDashboard() {
   const fetchProfileStatus = async () => {
     setLoading(prev => ({ ...prev, profileStatus: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       console.log('Fetching profile status from:', `${API_BASE_URL}/applications/profile-status`);
       const res = await axios.get(`${API_BASE_URL}/applications/profile-status`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -286,7 +286,7 @@ export default function CandidateDashboard() {
       if (profile.github) formData.append('github', profile.github.trim());
       if (profile.image) formData.append('image', profile.image);
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       await axios.put(`${API_BASE_URL}/users/profile`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -322,7 +322,7 @@ export default function CandidateDashboard() {
       const formData = new FormData();
       formData.append('resume', resumeFile);
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       await axios.post(`${API_BASE_URL}/users/resume`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -475,7 +475,7 @@ export default function CandidateDashboard() {
         }
       });
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       await axios.post(`${API_BASE_URL}/users/onboarding/submit`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,

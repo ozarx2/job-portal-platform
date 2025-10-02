@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api', // Local backend server
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api', // Production API
 });
 
 export const registerUser = (userData) => API.post('/auth/register', userData);

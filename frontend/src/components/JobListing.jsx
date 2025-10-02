@@ -41,7 +41,7 @@ const JobListing = ({ searchResults = null }) => {
         company: companyFilter
       });
 
-      const response = await axios.get(`http://localhost:5000/api/jobs?${params}`);
+      const response = await axios.get(`https://api.ozarx.in/api/jobs?${params}`);
       
       if (response.data.success) {
         setJobs(response.data.data || []);

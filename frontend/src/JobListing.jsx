@@ -12,7 +12,7 @@ export default function JobListing() {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/jobs');
+      const res = await axios.get('https://api.ozarx.in/api/jobs');
       setJobs(res.data || []);
     } catch (err) {
       console.error(err);
@@ -35,7 +35,7 @@ export default function JobListing() {
 
     try {
       await axios.post(
-        `http://localhost:5000/api/applications`,
+        `https://api.ozarx.in/api/applications`,
         { jobId },
         {
           headers: {

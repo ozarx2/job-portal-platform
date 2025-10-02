@@ -50,7 +50,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
         ...(roleFilter && { role: roleFilter })
       };
 
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get('https://api.ozarx.in/api/admin/users', {
         headers,
         params
       });
@@ -76,7 +76,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.post('http://localhost:5000/api/admin/users', newUser, { headers });
+      const response = await axios.post('https://api.ozarx.in/api/admin/users', newUser, { headers });
       
       if (response.data.success) {
         setSuccess('User created successfully');
@@ -102,7 +102,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.put(`http://localhost:5000/api/admin/users/${editingUser._id}`, editUser, { headers });
+      const response = await axios.put(`https://api.ozarx.in/api/admin/users/${editingUser._id}`, editUser, { headers });
       
       if (response.data.success) {
         setSuccess('User updated successfully');
@@ -127,7 +127,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, { headers });
+      const response = await axios.delete(`https://api.ozarx.in/api/admin/users/${userId}`, { headers });
       
       if (response.data.success) {
         setSuccess('User deleted successfully');

@@ -65,7 +65,7 @@ const JobApplicationModal = ({ isOpen, onClose, job, onSuccess }) => {
         data.append('resume', resumeFile);
       }
 
-      const response = await axios.post('http://localhost:5000/api/applications', data, {
+      const response = await axios.post('https://api.ozarx.in/api/applications', data, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

@@ -39,7 +39,7 @@ const SimpleOnboardingForm = ({ userId }) => {
   const fetchUserProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       const response = await axios.get(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -115,7 +115,7 @@ const SimpleOnboardingForm = ({ userId }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
 
       // Create FormData for file uploads
       const submitData = new FormData();

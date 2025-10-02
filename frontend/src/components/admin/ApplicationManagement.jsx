@@ -26,7 +26,7 @@ const ApplicationManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/applications', {
+      const response = await axios.get('https://api.ozarx.in/api/applications', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -58,7 +58,7 @@ const ApplicationManagement = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await axios.put(`http://localhost:5000/api/applications/${editingApplication._id}`, formData, {
+      const response = await axios.put(`https://api.ozarx.in/api/applications/${editingApplication._id}`, formData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -95,7 +95,7 @@ const ApplicationManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/applications/${applicationId}`, {
+      const response = await axios.delete(`https://api.ozarx.in/api/applications/${applicationId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

@@ -21,7 +21,7 @@ const DashboardOverview = () => {
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/dashboard-stats', {
+      const response = await axios.get('https://api.ozarx.in/api/admin/dashboard-stats', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
