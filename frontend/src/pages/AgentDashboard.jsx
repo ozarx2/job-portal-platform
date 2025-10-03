@@ -11,6 +11,11 @@ export default function AgentDashboard() {
   const [report, setReport] = useState(() => ({}));
   const [file, setFile] = useState(null);
   const [agentName, setAgentName] = useState("Agent");
+  const [candidateReport, setCandidateReport] = useState({
+    selected: [],
+    hired: [],
+    converted: []
+  });
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
 
@@ -78,6 +83,36 @@ export default function AgentDashboard() {
           console.error("Error fetching reports:", err);
           setReport({}); // Set empty object on error
         });
+    }
+  }, [activeTab, token]);
+
+  // Fetch candidate report
+  useEffect(() => {
+    if (activeTab === "candidate-report") {
+      const axiosAuth = axios.create({
+        baseURL: API_BASE_URL,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      // Fetch applications with different statuses
+      Promise.all([
+        axiosAuth.get("/applications?status=Selected").catch(() => ({ data: { data: [] } })),
+        axiosAuth.get("/applications?status=Hired").catch(() => ({ data: { data: [] } })),
+        axiosAuth.get("/crm/leads?status=Converted").catch(() => ({ data: { data: [] } }))
+      ])
+      .then(([selectedRes, hiredRes, convertedRes]) => {
+        setCandidateReport({
+          selected: selectedRes.data?.data || selectedRes.data || [],
+          hired: hiredRes.data?.data || hiredRes.data || [],
+          converted: convertedRes.data?.data || convertedRes.data || []
+        });
+      })
+      .catch((err) => {
+        console.error("Error fetching candidate report:", err);
+        setCandidateReport({ selected: [], hired: [], converted: [] });
+      });
     }
   }, [activeTab, token]);
 
@@ -227,6 +262,21 @@ export default function AgentDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 CRM
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("candidate-report")}
+              className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === "candidate-report"
+                  ? "bg-teal-600 text-white shadow-md transform scale-105"
+                  : "text-teal-700 hover:bg-teal-50 hover:text-teal-800"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Candidate Report
               </div>
             </button>
           </div>
@@ -496,6 +546,198 @@ export default function AgentDashboard() {
         </div>
       )}
 
+      {/* Candidate Report Tab */}
+      {activeTab === "candidate-report" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-teal-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-teal-100 rounded-lg">
+                <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">Candidate Success Report</h2>
+                <p className="text-gray-600">Track selected, hired, and converted candidates</p>
+                <p className="text-sm text-teal-600 font-medium mt-1">Agent: {agentName}</p>
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Selected Candidates Card */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-600">Selected Candidates</p>
+                    <p className="text-2xl font-bold text-blue-800">{candidateReport.selected.length}</p>
+                  </div>
+                  <div className="p-2 bg-blue-200 rounded-lg">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hired Candidates Card */}
+              <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-600">Hired Candidates</p>
+                    <p className="text-2xl font-bold text-green-800">{candidateReport.hired.length}</p>
+                  </div>
+                  <div className="p-2 bg-green-200 rounded-lg">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Converted Candidates Card */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-600">Converted Leads</p>
+                    <p className="text-2xl font-bold text-purple-800">{candidateReport.converted.length}</p>
+                  </div>
+                  <div className="p-2 bg-purple-200 rounded-lg">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Lists */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Selected Candidates */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Selected Candidates ({candidateReport.selected.length})
+                </h3>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {candidateReport.selected.length > 0 ? (
+                    candidateReport.selected.map((candidate, index) => (
+                      <div key={candidate._id || index} className="bg-white border border-blue-200 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-800">{candidate.candidate?.name || candidate.name || 'N/A'}</h4>
+                            <p className="text-sm text-gray-600">{candidate.candidate?.phone || candidate.phone || 'N/A'}</p>
+                            <p className="text-xs text-blue-600 mt-1">Job: {candidate.job?.title || 'N/A'}</p>
+                          </div>
+                          <span className="text-xs text-gray-500">#{index + 1}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm text-center py-4">No selected candidates found</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Hired Candidates */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                  Hired Candidates ({candidateReport.hired.length})
+                </h3>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {candidateReport.hired.length > 0 ? (
+                    candidateReport.hired.map((candidate, index) => (
+                      <div key={candidate._id || index} className="bg-white border border-green-200 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-800">{candidate.candidate?.name || candidate.name || 'N/A'}</h4>
+                            <p className="text-sm text-gray-600">{candidate.candidate?.phone || candidate.phone || 'N/A'}</p>
+                            <p className="text-xs text-green-600 mt-1">Job: {candidate.job?.title || 'N/A'}</p>
+                          </div>
+                          <span className="text-xs text-gray-500">#{index + 1}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm text-center py-4">No hired candidates found</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Converted Leads */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  Converted Leads ({candidateReport.converted.length})
+                </h3>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {candidateReport.converted.length > 0 ? (
+                    candidateReport.converted.map((lead, index) => (
+                      <div key={lead._id || index} className="bg-white border border-purple-200 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-800">{lead.name || 'N/A'}</h4>
+                            <p className="text-sm text-gray-600">{lead.phone || 'N/A'}</p>
+                            <p className="text-xs text-purple-600 mt-1">Company: {lead.companyName || 'N/A'}</p>
+                          </div>
+                          <span className="text-xs text-gray-500">#{index + 1}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm text-center py-4">No converted leads found</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Success Rate Summary */}
+            <div className="mt-6 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-emerald-800 mb-4">Success Rate Summary</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white border border-emerald-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-emerald-600">Total Successful Placements</p>
+                      <p className="text-2xl font-bold text-emerald-800">{candidateReport.hired.length + candidateReport.converted.length}</p>
+                    </div>
+                    <div className="p-2 bg-emerald-200 rounded-lg">
+                      <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white border border-emerald-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-emerald-600">Selection Rate</p>
+                      <p className="text-2xl font-bold text-emerald-800">
+                        {candidateReport.selected.length > 0 ? 
+                          `${Math.round((candidateReport.hired.length / candidateReport.selected.length) * 100)}%` : 
+                          '0%'
+                        }
+                      </p>
+                    </div>
+                    <div className="p-2 bg-emerald-200 rounded-lg">
+                      <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       </div>
     </div>
