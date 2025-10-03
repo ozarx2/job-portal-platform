@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-// Temporarily use fallback API if primary is down
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api';
+// Use GCP backend API
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
 
 // Fallback API URL for when primary API is down
-const FALLBACK_API_URL = import.meta.env.VITE_FALLBACK_API_URL || 'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api';
+const FALLBACK_API_URL = import.meta.env.VITE_FALLBACK_API_URL || 'https://api.ozarx.in/api';
 
 class ApiService {
   constructor() {

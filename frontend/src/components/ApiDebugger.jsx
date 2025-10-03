@@ -7,9 +7,8 @@ export default function ApiDebugger() {
 
   const testEndpoints = [
     { name: 'Primary API (api.ozarx.in)', url: 'https://api.ozarx.in/api/health' },
-    { name: 'Fallback API (Vercel)', url: 'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api/health' },
     { name: 'Jobs Endpoint (Primary)', url: 'https://api.ozarx.in/api/jobs?page=1&limit=5' },
-    { name: 'Jobs Endpoint (Fallback)', url: 'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api/jobs?page=1&limit=5' }
+    { name: 'Companies Endpoint (Primary)', url: 'https://api.ozarx.in/api/companies' }
   ];
 
   const testEndpoint = async (endpoint) => {
