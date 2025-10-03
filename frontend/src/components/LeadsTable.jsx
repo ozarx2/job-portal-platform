@@ -62,8 +62,8 @@ export default function LeadsTable() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('Jobs response:', jobsRes.data);
-      setJobs(jobsRes.data || []);
-      console.log('Jobs loaded:', jobsRes.data?.length || 0);
+      setJobs(jobsRes.data.data || []);
+      console.log('Jobs loaded:', jobsRes.data?.data?.length || 0);
     } catch (err) {
       console.error("Error fetching jobs:", err);
     }
