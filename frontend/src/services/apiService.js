@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+// Temporarily use fallback API if primary is down
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api';
+
+// Fallback API URL for when primary API is down
+const FALLBACK_API_URL = import.meta.env.VITE_FALLBACK_API_URL || 'https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api';
 
 class ApiService {
   constructor() {
@@ -78,7 +82,34 @@ class ApiService {
 
   // Job endpoints
   async getJobs(filters = {}) {
-    return this.client.get('/jobs', { params: filters });
+    try {
+      return await this.client.get('/jobs', { params: filters });
+    } catch (error) {
+      if (error.response?.status === 502) {
+        console.warn('Primary API down, trying fallback...');
+        // Try fallback API
+        const fallbackClient = axios.create({
+          baseURL: FALLBACK_API_URL,
+          timeout: 10000,
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          },
+        });
+        
+        // Add auth token if available
+        const token = localStorage.getItem('token');
+        if (token) {
+          fallbackClient.defaults.headers.Authorization = `Bearer ${token}`;
+        }
+        
+        return await fallbackClient.get('/jobs', { params: filters });
+      }
+      throw error;
+    }
   }
 
   async getEmployerJobs() {

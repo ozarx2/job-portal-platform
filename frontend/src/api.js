@@ -3,11 +3,10 @@ import axios from 'axios';
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api', // Production API
-  withCredentials: true,
+  withCredentials: true, // keep if you’re using cookies/sessions
   headers: {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Content-Type': 'application/json'
+    // ❌ Removed all Access-Control-Allow-* headers
   },
 });
 
@@ -45,12 +44,14 @@ export const deleteCompany = (id) => API.delete(`/companies/${id}`);
 
 // User endpoints
 export const updateUser = (userData) => API.put('/users/update', userData);
-export const uploadResume = (formData) => API.post('/users/resume', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' }
-});
-export const updateUserProfile = (formData) => API.put('/users/profile', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' }
-});
+export const uploadResume = (formData) =>
+  API.post('/users/resume', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+export const updateUserProfile = (formData) =>
+  API.put('/users/profile', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
 
 // Admin endpoints
 export const getUsers = (filters = {}) => API.get('/admin/users', { params: filters });
@@ -64,25 +65,32 @@ export const getLeads = (filters = {}) => API.get('/crm/leads', { params: filter
 export const updateLead = (id, data) => API.put(`/crm/leads/${id}`, data);
 export const deleteLead = (id) => API.delete(`/crm/leads/${id}`);
 export const getCrmSummary = () => API.get('/crm/admin/summary');
-export const uploadLeads = (formData) => API.post('/crm/upload', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' }
-});
-export const collectEmail = (leadId, emailData) => API.put(`/crm/leads/${leadId}/collect-email`, emailData);
-export const convertToPreUser = (leadId, userData) => API.post(`/crm/leads/${leadId}/convert-to-preuser`, userData);
+export const uploadLeads = (formData) =>
+  API.post('/crm/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+export const collectEmail = (leadId, emailData) =>
+  API.put(`/crm/leads/${leadId}/collect-email`, emailData);
+export const convertToPreUser = (leadId, userData) =>
+  API.post(`/crm/leads/${leadId}/convert-to-preuser`, userData);
 
 // Onboarding endpoints
-export const submitOnboarding = (formData) => API.post('/onboarding/submit', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' }
-});
-export const submitSimpleOnboarding = (formData) => API.post('/onboarding/simple-submit', formData);
+export const submitOnboarding = (formData) =>
+  API.post('/onboarding/submit', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+export const submitSimpleOnboarding = (formData) =>
+  API.post('/onboarding/simple-submit', formData);
 export const getOnboardingStatus = () => API.get('/onboarding/status');
 export const getCandidateOnboarding = (userId) => API.get(`/onboarding/candidate/${userId}`);
-export const uploadOnboardingDocument = (onboardingId, formData) => API.post(`/onboarding/${onboardingId}/documents`, formData, {
-  headers: { 'Content-Type': 'multipart/form-data' }
-});
-export const uploadDocument = (formData) => API.post('/onboarding/upload-document', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' }
-});
+export const uploadOnboardingDocument = (onboardingId, formData) =>
+  API.post(`/onboarding/${onboardingId}/documents`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+export const uploadDocument = (formData) =>
+  API.post('/onboarding/upload-document', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
 
 // Reports endpoints
 export const getReportsSummary = (filters = {}) => API.get('/reports/summary', { params: filters });

@@ -12,3 +12,7 @@ VITE_CORS_ORIGIN=https://api.ozarx.in
 # VITE_API_BASE_URL=http://localhost:5000/api
 # VITE_API_URL=http://localhost:5000/api
 # VITE_NODE_ENV=development
+
+# Fallback API Configuration (if primary API is down)
+# VITE_API_BASE_URL=https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api
+# VITE_API_URL=https://backend-ie0pgclfa-shamseers-projects-613ceea2.vercel.app/api
