@@ -13,7 +13,7 @@ export default function JobListing() {
   const fetchJobs = async () => {
     try {
       const res = await apiService.getJobs();
-      setJobs(res.data || []);
+      setJobs(res.data.data || []);
     } catch (err) {
       console.error(err);
     }

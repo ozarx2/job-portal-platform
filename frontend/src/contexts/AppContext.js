@@ -30,10 +30,10 @@ export function AppProvider({ children }) {
 
       setState(prev => ({
         ...prev,
-        applications: applicationsRes.data || [],
-        jobs: jobsRes.data || [],
-        leads: leadsRes.data || [],
-        companies: companiesRes.data || [],
+        applications: applicationsRes.data?.data || applicationsRes.data || [],
+        jobs: jobsRes.data?.data || jobsRes.data || [],
+        leads: leadsRes.data?.data || leadsRes.data || [],
+        companies: companiesRes.data?.data || companiesRes.data || [],
         loading: false,
         lastUpdated: Date.now()
       }));
