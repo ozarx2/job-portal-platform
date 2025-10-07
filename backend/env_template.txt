@@ -17,3 +17,13 @@ FRONTEND_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Session Secret
 SESSION_SECRET=b28571735fab77c48b368b09bf547939fef6ee05c31a52504905dccef5c9545aa898a8dbcc9bf6eac573b43db31b0a2a8cd0bbf581387a85682ff1e058a00673
+
+# Stripe Payment Configuration (Optional)
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# Razorpay Payment Configuration (Optional)
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=

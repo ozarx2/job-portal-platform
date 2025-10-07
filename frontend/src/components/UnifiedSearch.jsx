@@ -21,7 +21,6 @@ import LoginPrompt from './LoginPrompt';
 
 const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
@@ -63,10 +62,9 @@ const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
       // Search from multiple sources in parallel
       const [traditionalResults, aiResults, aggregatedResults] = await Promise.allSettled([
         // Traditional search (internal jobs)
-        axios.get(`https://api.ozarx.in/api/jobs`, {
+        axios.get(`http://localhost:5000/api/jobs`, {
           params: {
             search: searchTerm,
-            location: location,
             page: page,
             limit: 20
           }
@@ -78,7 +76,6 @@ const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
         // Aggregated search
         aggregatedJobService.searchJobs({
           searchTerm,
-          location,
           page: page,
           limit: 20
         })
@@ -90,7 +87,6 @@ const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
         ai: aiResults.status === 'fulfilled' ? aiResults.value : null,
         aggregated: aggregatedResults.status === 'fulfilled' ? aggregatedResults.value : null,
         searchTerm,
-        location,
         timestamp: new Date()
       };
 
@@ -154,19 +150,18 @@ const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
         insights: processedResults.ai?.data?.insights || null,
         aggregation: processedResults.aggregated?.aggregation || null,
         pagination: processedResults.aggregated?.pagination || null,
-        searchTerm,
-        location
+        searchTerm
       });
 
       // Save to history
-      saveToHistory({ searchTerm, location, resultCount: combinedJobs.length });
+      saveToHistory({ searchTerm, resultCount: combinedJobs.length });
 
       // Notify parent component
       if (onSearchResults) {
         onSearchResults(combinedJobs, processedResults.ai?.data?.insights);
       }
       if (onSearchChange) {
-        onSearchChange({ searchTerm, location, filters: {} });
+        onSearchChange({ searchTerm, filters: {} });
       }
 
     } catch (err) {
@@ -213,7 +208,6 @@ const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
 
   const handleHistoryClick = (historyItem) => {
     setSearchTerm(historyItem.searchTerm);
-    setLocation(historyItem.location || '');
   };
 
   const handleApplyNow = (job) => {
@@ -270,19 +264,6 @@ const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
             </div>
           </div>
           
-          <div className="flex-1">
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Location (e.g., remote, New York, Bangalore...)"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          
           <button
             type="submit"
             disabled={loading}
@@ -311,7 +292,7 @@ const UnifiedSearch = ({ onSearchResults, onSearchChange }) => {
                 onClick={() => handleHistoryClick(item)}
                 className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
               >
-                {item.searchTerm} {item.location && `in ${item.location}`}
+                {item.searchTerm}
               </button>
             ))}
           </div>

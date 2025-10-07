@@ -2,9 +2,28 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import GoogleAuth from '../components/auth/GoogleAuth';
+import useFormValidation from '../hooks/useFormValidation';
+import { showSuccess, showError, showWarning } from '../components/EnhancedNotificationSystem';
 
 export default function Signup() {
-  const [formData, setFormData] = useState({
+  const navigate = useNavigate();
+  
+  // Initialize form validation
+  const {
+    formData,
+    errors,
+    setErrors,
+    touched,
+    isValid,
+    isSubmitting,
+    handleInputChange,
+    handleBlur,
+    getFieldError,
+    hasFieldError,
+    getFieldClasses,
+    resetForm,
+    submitForm
+  } = useFormValidation({
     name: '',
     email: '',
     password: '',
@@ -15,16 +34,13 @@ export default function Signup() {
     experience: '',
     skills: '',
     location: ''
-  });
+  }, ['name', 'email', 'password', 'confirmPassword', 'role']);
 
-  const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState('');
   const [googleError, setGoogleError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const navigate = useNavigate();
 
   // Role definitions with icons and descriptions
   const roles = [
@@ -54,83 +70,9 @@ export default function Signup() {
     }
   ];
 
-  // Validation functions
-  const validateField = (name, value) => {
-    const newErrors = { ...errors };
-    
-    switch (name) {
-      case 'name':
-        if (!value.trim()) {
-          newErrors.name = 'Name is required';
-        } else if (value.trim().length < 2) {
-          newErrors.name = 'Name must be at least 2 characters';
-        } else {
-          delete newErrors.name;
-        }
-        break;
-        
-      case 'email':
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!value) {
-          newErrors.email = 'Email is required';
-        } else if (!emailRegex.test(value)) {
-          newErrors.email = 'Please enter a valid email';
-        } else {
-          delete newErrors.email;
-        }
-        break;
-        
-      case 'password':
-        if (!value) {
-          newErrors.password = 'Password is required';
-        } else if (value.length < 8) {
-          newErrors.password = 'Password must be at least 8 characters';
-        } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
-          newErrors.password = 'Password must contain uppercase, lowercase, and number';
-        } else {
-          delete newErrors.password;
-        }
-        break;
-        
-      case 'confirmPassword':
-        if (!value) {
-          newErrors.confirmPassword = 'Please confirm your password';
-        } else if (value !== formData.password) {
-          newErrors.confirmPassword = 'Passwords do not match';
-        } else {
-          delete newErrors.confirmPassword;
-        }
-        break;
-        
-      case 'phone':
-        if (value && !/^[\+]?[1-9][\d]{0,15}$/.test(value.replace(/[\s\-\(\)]/g, ''))) {
-          newErrors.phone = 'Please enter a valid phone number';
-        } else {
-          delete newErrors.phone;
-        }
-        break;
-        
-      case 'role':
-        if (!value) {
-          newErrors.role = 'Please select a role';
-        } else {
-          delete newErrors.role;
-        }
-        break;
-    }
-    
-    setErrors(newErrors);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    validateField(name, value);
-  };
-
+  // Handle role selection
   const handleRoleSelect = (roleId) => {
-    setFormData({ ...formData, role: roleId });
-    validateField('role', roleId);
+    handleInputChange({ target: { name: 'role', value: roleId } });
   };
 
   // Simple role-based dashboard routing
@@ -241,56 +183,39 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setErrors({});
-    setSuccess('');
-
-    // Final validation
-    const finalErrors = {};
-    if (!formData.name.trim()) finalErrors.name = 'Name is required';
-    if (!formData.email.trim()) finalErrors.email = 'Email is required';
-    if (!formData.password) finalErrors.password = 'Password is required';
-    if (!formData.role) finalErrors.role = 'Please select a role';
-    if (formData.password !== formData.confirmPassword) {
-      finalErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    if (Object.keys(finalErrors).length > 0) {
-      setErrors(finalErrors);
-      setLoading(false);
-      return;
-    }
-
+    
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
-      const res = await axios.post(`${API_BASE_URL}/auth/register`, {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        phone: formData.phone,
-        company: formData.company,
-        experience: formData.experience,
-        skills: formData.skills,
-        location: formData.location
+      await submitForm(async (sanitizedData) => {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const res = await axios.post(`${API_BASE_URL}/auth/register`, sanitizedData);
+        
+        showSuccess('Registration successful! Redirecting to your dashboard...');
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        
+        setTimeout(() => {
+          const dashboardRoute = getDashboardByRole(formData.role);
+          navigate(dashboardRoute);
+        }, 2000);
+        
+        return res.data;
+      }, {
+        onSuccess: () => {
+          setSuccess('Registration successful! Redirecting...');
+        },
+        onError: (error) => {
+          console.error('Registration error:', error);
+          if (error.response?.data?.msg) {
+            showError(error.response.data.msg);
+          } else if (error.message === 'Form validation failed') {
+            showWarning('Please fix the errors in the form before submitting.');
+          } else {
+            showError('Registration failed. Please try again.');
+          }
+        }
       });
-
-      setSuccess('Registration successful! Redirecting...');
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      
-      setTimeout(() => {
-        const dashboardRoute = getDashboardByRole(formData.role);
-        navigate(dashboardRoute);
-      }, 2000);
-      
-    } catch (err) {
-      console.error(err);
-      setErrors({ 
-        submit: err.response?.data?.msg || err.message || 'Registration failed' 
-      });
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      // Error handling is done in the submitForm callback
     }
   };
 
@@ -434,14 +359,13 @@ export default function Signup() {
                       type="text"
                       name="name"
                       value={formData.name}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300 ${
-                        errors.name ? 'border-red-500' : 'border-white/30'
-                      }`}
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses('name', 'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 bg-white/50 backdrop-blur-sm transition-all duration-300')}
                       placeholder="Enter your full name"
                     />
-                    {errors.name && (
-                      <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                    {hasFieldError('name') && (
+                      <p className="text-red-500 text-sm mt-1">{getFieldError('name')}</p>
                     )}
                   </div>
 
@@ -453,14 +377,13 @@ export default function Signup() {
                       type="email"
                       name="email"
                       value={formData.email}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300 ${
-                        errors.email ? 'border-red-500' : 'border-white/30'
-                      }`}
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses('email', 'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 bg-white/50 backdrop-blur-sm transition-all duration-300')}
                       placeholder="your@email.com"
                     />
-                    {errors.email && (
-                      <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                    {hasFieldError('email') && (
+                      <p className="text-red-500 text-sm mt-1">{getFieldError('email')}</p>
                     )}
                   </div>
 
@@ -472,7 +395,7 @@ export default function Signup() {
                       type="tel"
                       name="phone"
                       value={formData.phone}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                       className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300 ${
                         errors.phone ? 'border-red-500' : 'border-white/30'
                       }`}
@@ -491,7 +414,7 @@ export default function Signup() {
                       type="text"
                       name="location"
                       value={formData.location}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300"
                       placeholder="City, Country"
                     />
@@ -539,10 +462,9 @@ export default function Signup() {
                         type={showPassword ? "text" : "password"}
                         name="password"
                         value={formData.password}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300 ${
-                          errors.password ? 'border-red-500' : 'border-white/30'
-                        }`}
+                        onChange={handleInputChange}
+                        onBlur={handleBlur}
+                        className={getFieldClasses('password', 'w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 bg-white/50 backdrop-blur-sm transition-all duration-300')}
                         placeholder="Create a strong password"
                       />
                       <button
@@ -553,8 +475,8 @@ export default function Signup() {
                         {showPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
-                    {errors.password && (
-                      <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                    {hasFieldError('password') && (
+                      <p className="text-red-500 text-sm mt-1">{getFieldError('password')}</p>
                     )}
                   </div>
 
@@ -567,10 +489,9 @@ export default function Signup() {
                         type={showConfirmPassword ? "text" : "password"}
                         name="confirmPassword"
                         value={formData.confirmPassword}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300 ${
-                          errors.confirmPassword ? 'border-red-500' : 'border-white/30'
-                        }`}
+                        onChange={handleInputChange}
+                        onBlur={handleBlur}
+                        className={getFieldClasses('confirmPassword', 'w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 bg-white/50 backdrop-blur-sm transition-all duration-300')}
                         placeholder="Confirm your password"
                       />
                       <button
@@ -581,8 +502,8 @@ export default function Signup() {
                         {showConfirmPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
-                    {errors.confirmPassword && (
-                      <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                    {hasFieldError('confirmPassword') && (
+                      <p className="text-red-500 text-sm mt-1">{getFieldError('confirmPassword')}</p>
                     )}
                   </div>
 
@@ -595,7 +516,7 @@ export default function Signup() {
                         <select
                           name="experience"
                           value={formData.experience}
-                          onChange={handleChange}
+                          onChange={handleInputChange}
                           className="w-full px-4 py-3 border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300"
                         >
                           <option value="">Select experience level</option>
@@ -614,7 +535,7 @@ export default function Signup() {
                           type="text"
                           name="skills"
                           value={formData.skills}
-                          onChange={handleChange}
+                          onChange={handleInputChange}
                           className="w-full px-4 py-3 border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300"
                           placeholder="JavaScript, React, Python, etc."
                         />
@@ -631,7 +552,7 @@ export default function Signup() {
                         type="text"
                         name="company"
                         value={formData.company}
-                        onChange={handleChange}
+                        onChange={handleInputChange}
                         className="w-full px-4 py-3 border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300"
                         placeholder="Your company name"
                       />
@@ -662,10 +583,10 @@ export default function Signup() {
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={isSubmitting || !isValid}
                     className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
                   >
-                    {loading ? (
+                    {isSubmitting ? (
                       <div className="flex items-center space-x-2">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Creating Account...</span>

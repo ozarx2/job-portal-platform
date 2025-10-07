@@ -44,7 +44,7 @@ const JobPosting = () => {
         throw new Error('Last date must be in the future');
       }
 
-      const response = await axios.post('https://api.ozarx.in/api/jobs', {
+      const response = await axios.post('http://localhost:5000/api/jobs', {
         title: formData.title,
         description: formData.description,
         company: formData.companyName,

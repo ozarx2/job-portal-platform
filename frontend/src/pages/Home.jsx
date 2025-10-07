@@ -1,24 +1,6 @@
 import React, { useState } from "react";
-import {
-  Briefcase,
-  MapPin,
-  Building2,
-  Star,
-  Users,
-  ClipboardList,
-  Search,
-  Filter,
-  TrendingUp,
-  Award,
-  Target,
-  Zap,
-  Brain,
-  DollarSign,
-} from "lucide-react";
+import { Briefcase, Building2, Users, Award, TrendingUp, Search } from "lucide-react";
 import JobListing from "../components/JobListing";
-import JobSearch from "../components/JobSearch";
-import AISearch from "../components/AISearch";
-import AggregatedJobListing from "../components/AggregatedJobListing";
 import UnifiedSearch from "../components/UnifiedSearch";
 
 const Clients = () => {
@@ -95,9 +77,7 @@ const Clients = () => {
 const Home = () => {
   const [searchResults, setSearchResults] = useState(null);
   const [searchParams, setSearchParams] = useState(null);
-  const [searchMode, setSearchMode] = useState('unified'); // 'traditional', 'ai', 'aggregated', or 'unified'
   const [showResults, setShowResults] = useState(false);
-  const [aiInsights, setAiInsights] = useState(null);
 
   const stats = [
     { number: "10,000+", label: "Jobs Posted", icon: Briefcase },
@@ -106,36 +86,12 @@ const Home = () => {
     { number: "95%", label: "Success Rate", icon: Award },
   ];
 
-  const features = [
-    {
-      icon: Search,
-      title: "Smart Job Search",
-      description: "Advanced filtering and AI-powered job matching",
-    },
-    {
-      icon: Target,
-      title: "Career Guidance",
-      description: "Expert advice to help you land your dream job",
-    },
-    {
-      icon: Zap,
-      title: "Quick Applications",
-      description: "One-click applications with resume optimization",
-    },
-    {
-      icon: TrendingUp,
-      title: "Growth Opportunities",
-      description: "Connect with companies that value your potential",
-    },
-  ];
+  const features = [];
 
   // Handle search results
   const handleSearchResults = (results, insights = null) => {
     setSearchResults(results);
     setShowResults(true);
-    if (insights) {
-      setAiInsights(insights);
-    }
   };
 
   // Handle search parameters
@@ -148,7 +104,6 @@ const Home = () => {
     setSearchResults(null);
     setSearchParams(null);
     setShowResults(false);
-    setAiInsights(null);
   };
 
   const testimonials = [
@@ -184,218 +139,16 @@ const Home = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Your Dream Job</h1>
             <p className="text-gray-600">Search and discover amazing career opportunities</p>
           </div>
-          
-          {/* Search Mode Toggle */}
-          <div className="flex justify-center mb-6">
-            <div className="bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setSearchMode('traditional')}
-                className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
-                  searchMode === 'traditional'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Search className="w-4 h-4 inline mr-2" />
-                Traditional
-              </button>
-              <button
-                onClick={() => setSearchMode('ai')}
-                className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
-                  searchMode === 'ai'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Brain className="w-4 h-4 inline mr-2" />
-                AI Search
-              </button>
-              <button
-                onClick={() => setSearchMode('aggregated')}
-                className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
-                  searchMode === 'aggregated'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <TrendingUp className="w-4 h-4 inline mr-2" />
-                Aggregated
-              </button>
-              <button
-                onClick={() => setSearchMode('unified')}
-                className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
-                  searchMode === 'unified'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Brain className="w-4 h-4 inline mr-2" />
-                Unified
-              </button>
-            </div>
-          </div>
-
           {/* Search Component */}
           <div className="max-w-4xl mx-auto">
-            {searchMode === 'traditional' ? (
-              <JobSearch 
-                onSearchResults={handleSearchResults}
-                onSearchChange={handleSearchChange}
-              />
-            ) : searchMode === 'ai' ? (
-              <AISearch 
-                onSearchResults={handleSearchResults}
-                onSearchChange={handleSearchChange}
-              />
-            ) : searchMode === 'aggregated' ? (
-              <AggregatedJobListing 
-                searchParams={searchParams}
-                onJobSelect={(job) => {
-                  // Handle job selection for aggregated jobs
-                  console.log('Selected aggregated job:', job);
-                }}
-              />
-            ) : (
-              <UnifiedSearch 
-                onSearchResults={handleSearchResults}
-                onSearchChange={handleSearchChange}
-              />
-            )}
+            <UnifiedSearch 
+              onSearchResults={handleSearchResults}
+              onSearchChange={handleSearchChange}
+            />
           </div>
     </div>
   </div>
-
-      {/* Search Results Section - Right after search bar */}
-      {showResults && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4 py-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900">Search Results</h2>
-                <p className="text-gray-600">
-                  {searchResults?.length || 0} jobs found
-                </p>
-              </div>
-              <button
-                onClick={clearSearch}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Clear Search
-              </button>
-            </div>
-            
-            {searchParams && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {searchParams.searchTerm && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    "{searchParams.searchTerm}"
-                  </span>
-                )}
-                {searchParams.location && (
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                    📍 {searchParams.location}
-                  </span>
-                )}
-                {searchParams.filters && typeof searchParams.filters === 'object' && Object.entries(searchParams.filters).map(([key, value]) => 
-                  value && (
-                    <span key={key} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
-                      {key}: {value}
-                    </span>
-                  )
-                )}
-              </div>
-            )}
-            
-            {/* Display search results immediately */}
-            {searchMode === 'unified' ? (
-              // Unified search handles its own results display
-              <div className="text-center py-8">
-                <p className="text-gray-600">Unified search results are displayed above</p>
-              </div>
-            ) : searchMode === 'aggregated' ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600">Aggregated search results are displayed above</p>
-              </div>
-            ) : (
-              <JobListing searchResults={searchResults} />
-            )}
-            
-            {/* AI Insights for AI Search Mode */}
-            {searchMode === 'ai' && aiInsights && (
-              <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
-                <div className="flex items-center mb-4">
-                  <Brain className="w-5 h-5 text-blue-600 mr-2" />
-                  <h3 className="text-lg font-semibold text-gray-900">AI Market Insights</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Market Trends */}
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <h4 className="font-medium text-blue-900 mb-2 flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Market Trends
-                    </h4>
-                    <p className="text-blue-800 text-sm">
-                      {aiInsights.marketTrends || "The job market shows strong demand for your search criteria."}
-                    </p>
-                  </div>
-                  
-                  {/* Skill Demand */}
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <h4 className="font-medium text-green-900 mb-2 flex items-center">
-                      <Target className="w-4 h-4 mr-2" />
-                      In-Demand Skills
-                    </h4>
-                    <p className="text-green-800 text-sm">
-                      {aiInsights.skillDemand || "Most in-demand skills: React, Python, AWS, Machine Learning"}
-                    </p>
-                  </div>
-                  
-                  {/* Salary Insights */}
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <h4 className="font-medium text-purple-900 mb-2 flex items-center">
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      Salary Insights
-                    </h4>
-                    <p className="text-purple-800 text-sm">
-                      {aiInsights.salaryInsights || "Average salary range: ₹6-15 LPA"}
-                    </p>
-                  </div>
-                  
-                  {/* Company Insights */}
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <h4 className="font-medium text-orange-900 mb-2 flex items-center">
-                      <Building2 className="w-4 h-4 mr-2" />
-                      Top Companies
-                    </h4>
-                    <p className="text-orange-800 text-sm">
-                      {aiInsights.companyInsights || "Top companies hiring: TCS, Infosys, Microsoft, Google"}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* AI Recommendations */}
-                {aiInsights.recommendations && aiInsights.recommendations.length > 0 && (
-                  <div className="mt-6 bg-white rounded-lg p-4 shadow-sm">
-                    <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-                      <Zap className="w-4 h-4 mr-2 text-yellow-600" />
-                      AI Recommendations
-                    </h4>
-                    <ul className="space-y-2">
-                      {aiInsights.recommendations.map((recommendation, index) => (
-                        <li key={index} className="flex items-start">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                          <span className="text-gray-700 text-sm">{recommendation}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Search Results Section removed: UnifiedSearch displays its own results */}
 
       {/* Market Insights and Recent Searches Section - After search results */}
       {showResults && (

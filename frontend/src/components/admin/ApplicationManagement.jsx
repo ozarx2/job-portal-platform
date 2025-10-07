@@ -26,12 +26,18 @@ const ApplicationManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://api.ozarx.in/api/applications', {
+      const response = await axios.get('http://localhost:5000/api/applications', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.data.success) {
+      // Handle direct array response from backend
+      if (Array.isArray(response.data)) {
+        setApplications(response.data);
+      } else if (response.data.success) {
+        // Handle wrapped response format (if backend changes in future)
         setApplications(response.data.data || []);
+      } else {
+        setApplications([]);
       }
     } catch (error) {
       console.error('Error fetching applications:', error);
@@ -58,7 +64,7 @@ const ApplicationManagement = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await axios.put(`https://api.ozarx.in/api/applications/${editingApplication._id}`, formData, {
+      const response = await axios.put(`http://localhost:5000/api/applications/${editingApplication._id}`, formData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -95,7 +101,7 @@ const ApplicationManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`https://api.ozarx.in/api/applications/${applicationId}`, {
+      const response = await axios.delete(`http://localhost:5000/api/applications/${applicationId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -303,7 +309,8 @@ const ApplicationManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{application.job?.title || 'N/A'}</div>
-                      <div className="text-sm text-gray-500">{application.job?.company || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">{application.job?.companyId?.name || 'No Company'}</div>
+                      <div className="text-xs text-gray-400">ID: {application.job?._id ? application.job._id.toString().substring(0, 8) : 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(application.status)}`}>
@@ -374,7 +381,8 @@ const ApplicationManagement = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Company</label>
-                    <p className="text-sm text-gray-900">{selectedApplication.job?.company || 'N/A'}</p>
+                    <p className="text-sm text-gray-900">{selectedApplication.job?.companyId?.name || 'No Company'}</p>
+                    <p className="text-xs text-gray-500">{selectedApplication.job?.companyId?.industry || ''}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Status</label>
@@ -458,6 +466,13 @@ const ApplicationManagement = () => {
 };
 
 export default ApplicationManagement;
+
+
+
+
+
+
+
 
 
 

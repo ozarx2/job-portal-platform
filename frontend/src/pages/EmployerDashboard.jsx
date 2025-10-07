@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import apiService from '../services/apiService';
 import dashboardHub from '../services/dashboardHub';
@@ -9,6 +10,7 @@ import AssistedHiringService from '../components/AssistedHiringService';
 import AssistedHiringServices from '../components/AssistedHiringServices';
 
 export default function EmployerDashboard() {
+  const navigate = useNavigate();
   const { updateApplicationStatus, createJob } = useApp();
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -19,18 +21,18 @@ export default function EmployerDashboard() {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   
-  // Resume search states
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchFilters, setSearchFilters] = useState({
-    location: '',
-    experience: '',
-    skills: '',
-    salary: ''
-  });
-  const [hasSearched, setHasSearched] = useState(false);
-  const [lastSearchTime, setLastSearchTime] = useState(0);
+  // Resume search states - REMOVED
+  // const [searchResults, setSearchResults] = useState([]);
+  // const [searchLoading, setSearchLoading] = useState(false);
+  // const [searchQuery, setSearchQuery] = useState('');
+  // const [searchFilters, setSearchFilters] = useState({
+  //   location: '',
+  //   experience: '',
+  //   skills: '',
+  //   salary: ''
+  // });
+  // const [hasSearched, setHasSearched] = useState(false);
+  // const [lastSearchTime, setLastSearchTime] = useState(0);
   
   // Company management states
   const [showCompanyForm, setShowCompanyForm] = useState(false);
@@ -52,15 +54,28 @@ export default function EmployerDashboard() {
   // Fetch companies
   const fetchCompanies = useCallback(async () => {
     try {
-      const companiesRes = await apiService.getCompanies();
+      // Use getUserCompanies to get only companies associated with the current user
+      const companiesRes = await apiService.getUserCompanies();
       const companiesData = Array.isArray(companiesRes.data) 
         ? companiesRes.data 
         : companiesRes.data?.data || [];
       setCompanies(companiesData);
-      console.log('🏢 Companies loaded:', companiesData.length);
+      console.log('🏢 User companies loaded:', companiesData.length);
     } catch (error) {
-      console.warn('❌ Could not fetch companies:', error.message);
-      setCompanies([]);
+      console.warn('❌ Could not fetch user companies:', error.message);
+      // Fallback to get all companies if getUserCompanies fails
+      try {
+        console.log('🔄 Falling back to getCompanies...');
+        const fallbackRes = await apiService.getCompanies();
+        const fallbackData = Array.isArray(fallbackRes.data) 
+          ? fallbackRes.data 
+          : fallbackRes.data?.data || [];
+        setCompanies(fallbackData);
+        console.log('🏢 Fallback companies loaded:', fallbackData.length);
+      } catch (fallbackError) {
+        console.error('❌ Both company endpoints failed:', fallbackError.message);
+        setCompanies([]);
+      }
     }
   }, []);
 
@@ -316,11 +331,12 @@ export default function EmployerDashboard() {
     setSelectedJobForService(null);
   }, []);
 
-  // Resume search function with dynamic filtering
-  const searchResumes = useCallback(async (query = searchQuery, filters = searchFilters) => {
+  // Resume search function with dynamic filtering - REMOVED
+  /*
+  const searchResumes = useCallback(async (query = '', filters = {}) => {
     if (!query.trim() && !filters.location && !filters.experience && !filters.skills && !filters.salary) {
-      setSearchResults([]);
-      setHasSearched(false);
+      // setSearchResults([]);
+      // setHasSearched(false);
       return;
     }
 
@@ -335,12 +351,38 @@ export default function EmployerDashboard() {
     setHasSearched(true);
     
     try {
-      const searchParams = {
-        query: query.trim(),
-        ...filters
-      };
+      // Only include non-empty parameters
+      const searchParams = {};
+      
+      if (query.trim()) {
+        searchParams.query = query.trim();
+      }
+      
+      if (filters.location && filters.location.trim()) {
+        searchParams.location = filters.location.trim();
+      }
+      
+      if (filters.experience && filters.experience.trim()) {
+        searchParams.experience = filters.experience.trim();
+      }
+      
+      if (filters.skills && filters.skills.trim()) {
+        searchParams.skills = filters.skills.trim();
+      }
+      
+      if (filters.salary && filters.salary.trim()) {
+        searchParams.salary = filters.salary.trim();
+      }
 
       console.log('🔍 Searching candidates with params:', searchParams);
+
+      // Validate that we have at least one search parameter
+      if (Object.keys(searchParams).length === 0) {
+        console.log('⚠️ No search parameters provided, skipping API call');
+        setSearchResults([]);
+        setHasSearched(false);
+        return;
+      }
 
       // Try to search candidates/resumes
       const response = await apiService.searchCandidates(searchParams);
@@ -461,9 +503,10 @@ export default function EmployerDashboard() {
         setMessageType('');
       }, 3000);
     } finally {
-      setSearchLoading(false);
+      // setSearchLoading(false);
     }
-  }, [searchQuery, searchFilters, lastSearchTime, setMessage, setMessageType]);
+  }, [setMessage, setMessageType]);
+  */
 
   // Contact candidate function
   const contactCandidate = useCallback(async (candidateId, candidateName) => {
@@ -497,7 +540,8 @@ export default function EmployerDashboard() {
     };
   }, [fetchEmployerData, fetchCompanies]);
 
-  // Debounced search effect for dynamic searching - only when there's actual input
+  // Debounced search effect for dynamic searching - REMOVED
+  /*
   useEffect(() => {
     // Only search if there's actual user input
     const hasInput = searchQuery.trim() || 
@@ -515,7 +559,8 @@ export default function EmployerDashboard() {
     }, 600); // 600ms delay to prevent excessive calls
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, searchFilters, activeTab, searchResumes]);
+  }, [searchQuery, searchFilters, activeTab]); // Removed searchResumes from dependencies
+  */
 
   // ✅ Post a new job
   const postJob = useCallback(async (e) => {
@@ -586,31 +631,7 @@ export default function EmployerDashboard() {
     }
   }, [updateApplicationStatus, fetchEmployerData, setMessage, setMessageType]);
 
-  // 🧪 Test API endpoint
-  const testApiEndpoint = async () => {
-    if ((applications?.length || 0) === 0) {
-      setMessage('No applications to test with');
-      setMessageType('error');
-      return;
-    }
-    
-    const testApp = applications[0];
-    const testStatus = 'Test Status';
-    
-    console.log('🧪 Testing API with:', { appId: testApp._id, status: testStatus });
-    
-    const result = await apiService.testApplicationUpdate(testApp._id, testStatus);
-    
-    if (result.success) {
-      console.log('🧪 Test successful:', result.data);
-      setMessage(`API test successful! Check console for details.`);
-      setMessageType('success');
-    } else {
-      console.error('🧪 Test failed:', result.message);
-      setMessage(`API test failed: ${result.message}`);
-      setMessageType('error');
-    }
-  };
+  // Test and debug helpers removed for production UI
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -642,28 +663,13 @@ export default function EmployerDashboard() {
               >
                 {dataLoading ? '⏳ Loading...' : '🔄 Refresh'}
               </button>
-        <button 
-          onClick={testApiEndpoint}
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 text-sm font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-        >
-          🧪 Test API
-        </button>
-              <button 
-                onClick={() => {
-                  console.log('Current state:', { jobs, applications, dataLoading });
-                  console.log('Jobs data:', jobs);
-                  console.log('Jobs type:', typeof jobs);
-                  console.log('Jobs is array:', Array.isArray(jobs));
-                  console.log('Jobs length:', jobs?.length);
-                  console.log('Applications data:', applications);
-                  console.log('Applications is array:', Array.isArray(applications));
-                  console.log('Active tab:', activeTab);
-                  console.log('Jobs array check:', Array.isArray(jobs) && jobs.length > 0);
-                }}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200 text-sm font-medium"
+              <button
+                onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); navigate('/login'); }}
+                className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition-colors duration-200 text-sm font-semibold shadow-lg"
               >
-                🐛 Debug
+                Logout
               </button>
+              {/* Debug/test buttons removed */}
             </div>
           </div>
         </div>
@@ -679,12 +685,18 @@ export default function EmployerDashboard() {
               { id: 'companies', name: 'Companies', icon: '🏢' },
               { id: 'applications', name: 'Applications', icon: '📋' },
               { id: 'assisted-hiring', name: 'Assisted Hiring', icon: '🎯' },
-              { id: 'search', name: 'Search Candidates', icon: '🔍' },
+              { id: 'resume-search', name: 'Resume Search', icon: '📄', external: true },
               { id: 'post', name: 'Post Job', icon: '➕' }
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (tab.external) {
+                    navigate('/resume-search');
+                  } else {
+                    setActiveTab(tab.id);
+                  }
+                }}
                 className={`py-5 px-8 border-b-3 font-bold text-base transition-all duration-300 rounded-t-xl ${
                   activeTab === tab.id
                     ? 'border-indigo-500 text-indigo-600 bg-white/80 shadow-lg'
@@ -834,7 +846,6 @@ export default function EmployerDashboard() {
                 </button>
             </div>
             <div className="p-6">
-              {console.log('🎨 Rendering jobs section - jobs:', jobs, 'length:', jobs?.length, 'isArray:', Array.isArray(jobs))}
               {Array.isArray(jobs) && jobs.length > 0 ? (
                 <div className="space-y-4">
           {jobs.map((job) => (
@@ -1203,8 +1214,8 @@ export default function EmployerDashboard() {
           </div>
         )}
 
-        {/* Search Candidates Tab */}
-        {activeTab === 'search' && (
+        {/* Search Candidates Tab - REMOVED */}
+        {false && (
           <div className="space-y-6">
             {/* Search Form */}
             <div className="bg-white rounded-lg shadow">

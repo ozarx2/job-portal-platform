@@ -26,7 +26,7 @@ const PreUserLogin = () => {
   const handleTokenLogin = async (token) => {
     try {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
       const response = await axios.post(`${API_BASE_URL}/auth/preuser-login`, {
         activationToken: token
       });
@@ -60,7 +60,7 @@ const PreUserLogin = () => {
     setError('');
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
       const response = await axios.post(`${API_BASE_URL}/auth/preuser-login`, {
         email: formData.email,
         password: formData.password
@@ -88,7 +88,9 @@ const PreUserLogin = () => {
       console.error('Pre-user login error:', err);
       
       if (err.response?.status === 401) {
-        setError('Invalid email or password. Please check your credentials.');
+        setError('Incorrect email or password.');
+      } else if (err.response?.status === 400 || /validation/i.test(err.response?.data?.message || '')) {
+        setError('Please check your email and password and try again.');
       } else if (err.response?.status === 403) {
         setError('Your account has expired. Please contact support.');
       } else if (err.response?.status === 404) {

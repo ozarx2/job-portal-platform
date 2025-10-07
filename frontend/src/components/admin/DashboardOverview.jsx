@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const DashboardOverview = () => {
+const DashboardOverview = ({ onNavigateToReports }) => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalJobs: 0,
@@ -21,7 +21,7 @@ const DashboardOverview = () => {
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://api.ozarx.in/api/admin/dashboard-stats', {
+      const response = await axios.get('http://localhost:5000/api/admin/dashboard-stats', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -38,8 +38,8 @@ const DashboardOverview = () => {
   const kpiCards = [
     {
       title: 'Total Users',
-      value: stats.totalUsers,
-      change: `+${stats.newUsersThisMonth} this month`,
+      value: stats.totalUsers || 0,
+      change: `All registered users`,
       changeType: 'positive',
       icon: (
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,9 +51,9 @@ const DashboardOverview = () => {
       borderColor: 'border-blue-200'
     },
     {
-      title: 'Active Jobs',
-      value: stats.activeJobs,
-      change: `${stats.totalJobs} total jobs`,
+      title: 'Total Jobs',
+      value: stats.totalJobs || 0,
+      change: `All job listings`,
       changeType: 'neutral',
       icon: (
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,8 +66,8 @@ const DashboardOverview = () => {
     },
     {
       title: 'Applications',
-      value: stats.totalApplications,
-      change: `${stats.pendingApplications} pending`,
+      value: stats.totalApplications || 0,
+      change: `All job applications`,
       changeType: 'warning',
       icon: (
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,8 +80,8 @@ const DashboardOverview = () => {
     },
     {
       title: 'Documents',
-      value: stats.totalDocuments,
-      change: `${stats.recentUploads} recent uploads`,
+      value: stats.totalDocuments || 0,
+      change: `User uploaded documents`,
       changeType: 'positive',
       icon: (
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,7 +129,7 @@ const DashboardOverview = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
-                <p className="text-2xl font-bold text-gray-900">{card.value.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{(card.value || 0).toLocaleString()}</p>
                 <p className={`text-xs mt-1 ${
                   card.changeType === 'positive' ? 'text-green-600' : 
                   card.changeType === 'warning' ? 'text-orange-600' : 
@@ -146,6 +146,44 @@ const DashboardOverview = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 mb-6">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+          <p className="text-sm text-gray-600">Access important features quickly</p>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => onNavigateToReports && onNavigateToReports()}
+              className="flex items-center justify-center p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 shadow-lg"
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">📊</div>
+                <div className="font-medium">View Reports</div>
+                <div className="text-xs opacity-90">Analytics & Insights</div>
+              </div>
+            </button>
+            
+            <button className="flex items-center justify-center p-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl hover:from-green-700 hover:to-teal-700 transition-all duration-300 hover:scale-105 shadow-lg">
+              <div className="text-center">
+                <div className="text-2xl mb-2">📤</div>
+                <div className="font-medium">Export Data</div>
+                <div className="text-xs opacity-90">Download Reports</div>
+              </div>
+            </button>
+            
+            <button className="flex items-center justify-center p-4 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all duration-300 hover:scale-105 shadow-lg">
+              <div className="text-center">
+                <div className="text-2xl mb-2">⚡</div>
+                <div className="font-medium">Real-Time</div>
+                <div className="text-xs opacity-90">Live Monitoring</div>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Recent Activity */}

@@ -1,95 +1,206 @@
-// route-validator.js - Run this to check for route issues
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
 
-function validateRouteFile(routePath) {
-  console.log(`\n🔍 Checking route file: ${routePath}`);
+const app = express();
+
+// ------------------- Security Headers -------------------
+app.use((req, res, next) => {
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
+// ------------------- CORS Configuration -------------------
+const allowedOrigins = [
+  'https://ozarx.in',
+  'https://www.ozarx.in',
+  'https://job-portal-platform-git-master-shamseers-projects-613ceea2.vercel.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('❌ CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
+
+// ------------------- Body Parser -------------------
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// ------------------- Basic Routes -------------------
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Job Portal API is running!', 
+    status: 'OK', 
+    timestamp: new Date(),
+    version: '1.0.0'
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date()
+  });
+});
+
+// ------------------- API Routes -------------------
+// Import and use route files
+const authRoutes = require('./routes/auth');
+const jobRoutes = require('./routes/jobs');
+const companyRoutes = require('./routes/company');
+const applicationRoutes = require('./routes/applications');
+const userRoutes = require('./routes/users');
+const adminRoutes = require('./routes/admin');
+const leadRoutes = require('./routes/leadRoutes');
+const crmRoutes = require('./routes/crm');
+const reportRoutes = require('./routes/reports');
+const documentRoutes = require('./routes/documents');
+const onboardingRoutes = require('./routes/onboarding');
+const emailRoutes = require('./routes/email');
+const aiRoutes = require('./routes/ai');
+const assistedHiringRoutes = require('./routes/assistedHiring');
+const aggregatedJobsRoutes = require('./routes/aggregatedJobs');
+const agentApplicationsRoutes = require('./routes/agentApplications');
+const adminDocumentsRoutes = require('./routes/adminDocuments');
+const simpleOnboardingRoutes = require('./routes/simpleOnboarding');
+const cronRoutes = require('./routes/cron');
+const candidateRoutes = require('./routes/candidates');
+const skillRoutes = require('./routes/skills');
+
+// Use routes - Mount them one by one with error handling
+try {
+  app.use('/api/auth', authRoutes);
+  console.log('✅ Auth routes loaded');
   
-  if (!fs.existsSync(routePath)) {
-    console.log(`❌ File not found: ${routePath}`);
-    return false;
-  }
+  app.use('/api/jobs', jobRoutes);
+  console.log('✅ Jobs routes loaded');
   
-  try {
-    const route = require(routePath);
-    
-    if (!route) {
-      console.log(`❌ Route file exports nothing: ${routePath}`);
-      return false;
-    }
-    
-    if (typeof route !== 'function' && typeof route.router !== 'function') {
-      console.log(`❌ Route file doesn't export router: ${routePath}`);
-      return false;
-    }
-    
-    // Test if the route can be mounted without errors
-    const testApp = express();
-    try {
-      testApp.use('/test', route);
-      console.log(`✅ Route file is valid: ${routePath}`);
-      return true;
-    } catch (mountError) {
-      console.log(`❌ Route mounting error in ${routePath}:`, mountError.message);
-      return false;
-    }
-    
-  } catch (error) {
-    console.log(`❌ Error loading route ${routePath}:`, error.message);
-    
-    // Check for common issues
-    if (error.message.includes('Missing parameter name')) {
-      console.log(`🔧 Possible fix: Check route parameter definitions (e.g., '/:id' instead of '/:')`);
-    }
-    if (error.message.includes('pathToRegexpError')) {
-      console.log(`🔧 Possible fix: Check for invalid route patterns`);
-    }
-    
-    return false;
-  }
+  app.use('/api/companies', companyRoutes);
+  console.log('✅ Company routes loaded');
+  
+  app.use('/api/applications', applicationRoutes);
+  console.log('✅ Application routes loaded');
+  
+  app.use('/api/users', userRoutes);
+  console.log('✅ User routes loaded');
+  
+  app.use('/api/admin', adminRoutes);
+  console.log('✅ Admin routes loaded');
+  
+  app.use('/api/leads', leadRoutes);
+  console.log('✅ Lead routes loaded');
+  
+  app.use('/api/crm', crmRoutes);
+  console.log('✅ CRM routes loaded');
+  
+  app.use('/api/reports', reportRoutes);
+  console.log('✅ Report routes loaded');
+  
+  app.use('/api/documents', documentRoutes);
+  console.log('✅ Document routes loaded');
+  
+  app.use('/api/onboarding', onboardingRoutes);
+  console.log('✅ Onboarding routes loaded');
+  
+  app.use('/api/email', emailRoutes);
+  console.log('✅ Email routes loaded');
+  
+  app.use('/api/ai', aiRoutes);
+  console.log('✅ AI routes loaded');
+  
+  app.use('/api/assisted-hiring', assistedHiringRoutes);
+  console.log('✅ Assisted hiring routes loaded');
+  
+  app.use('/api/aggregated-jobs', aggregatedJobsRoutes);
+  console.log('✅ Aggregated jobs routes loaded');
+  
+  app.use('/api/agent-applications', agentApplicationsRoutes);
+  console.log('✅ Agent applications routes loaded');
+  
+  app.use('/api/admin-documents', adminDocumentsRoutes);
+  console.log('✅ Admin documents routes loaded');
+  
+  app.use('/api/simple-onboarding', simpleOnboardingRoutes);
+  console.log('✅ Simple onboarding routes loaded');
+  
+  app.use('/api/cron', cronRoutes);
+  console.log('✅ Cron routes loaded');
+  
+  app.use('/api/candidates', candidateRoutes);
+  console.log('✅ Candidate routes loaded');
+  
+  app.use('/api/skills', skillRoutes);
+  console.log('✅ Skill routes loaded');
+} catch (error) {
+  console.error('❌ Error mounting routes:', error.message);
+  throw error;
 }
 
-// Validate all route files
-async function validateAllRoutes() {
-  console.log('🚀 Starting route validation...\n');
-  
-  const routeFiles = [
-    './routes/auth.js',
-    './routes/jobs.js',
-    './routes/applications.js',
-    './routes/agentApplications.js',
-    './routes/users.js',
-    './routes/admin.js',
-    './routes/reports.js',
-    './routes/crm.js',
-    './routes/leadRoutes.js',
-    './swagger.js'
-  ];
-  
-  let validRoutes = 0;
-  let totalRoutes = routeFiles.length;
-  
-  for (const routeFile of routeFiles) {
-    if (validateRouteFile(path.resolve(routeFile))) {
-      validRoutes++;
-    }
-  }
-  
-  console.log(`\n📊 Validation Summary:`);
-  console.log(`✅ Valid routes: ${validRoutes}/${totalRoutes}`);
-  console.log(`❌ Invalid routes: ${totalRoutes - validRoutes}/${totalRoutes}`);
-  
-  if (validRoutes === totalRoutes) {
-    console.log(`\n🎉 All routes are valid!`);
-  } else {
-    console.log(`\n⚠️  Please fix the invalid routes before starting the server.`);
-  }
-}
+// ------------------- Error Handling -------------------
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: err.message 
+  });
+});
 
-// Run validation if this script is executed directly
-if (require.main === module) {
-  validateAllRoutes();
-}
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.originalUrl 
+  });
+});
 
-module.exports = { validateRouteFile, validateAllRoutes };
+// ------------------- MongoDB Connection -------------------
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 30000, // 30 seconds
+  socketTimeoutMS: 45000, // 45 seconds
+  bufferCommands: false, // Disable mongoose buffering
+  maxPoolSize: 10, // Maintain up to 10 socket connections
+  family: 4 // Use IPv4, skip trying IPv6
+}).then(() => {
+  console.log('✅ MongoDB connected successfully');
+}).catch(err => {
+  console.error('❌ MongoDB connection error:', err);
+});
+
+// ------------------- Start Server -------------------
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 CORS enabled for: ${allowedOrigins.join(', ')}`);
+  console.log(`📋 Available endpoints:`);
+  console.log(`   - POST /api/crm/leads/import (CRM leads import)`);
+  console.log(`   - GET /api/crm/leads (Get leads)`);
+  console.log(`   - POST /api/auth/login (Authentication)`);
+  console.log(`   - GET /api/jobs (Jobs)`);
+  console.log(`   - And many more...`);
+});
+
+module.exports = app;

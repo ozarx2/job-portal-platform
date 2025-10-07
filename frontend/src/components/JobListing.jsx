@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Briefcase, MapPin, Building2, Clock, DollarSign, Filter, Search } from 'lucide-react';
+import { Briefcase, Building2, Clock, DollarSign, Search } from 'lucide-react';
 import JobApplicationModal from './JobApplicationModal';
 import LoginPrompt from './LoginPrompt';
 
@@ -8,9 +8,6 @@ const JobListing = ({ searchResults = null }) => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
-  const [companyFilter, setCompanyFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
@@ -28,22 +25,25 @@ const JobListing = ({ searchResults = null }) => {
     } else {
       fetchJobs();
     }
-  }, [currentPage, searchTerm, locationFilter, companyFilter, searchResults]);
+  }, [currentPage, searchResults]);
 
   const fetchJobs = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
         page: currentPage,
-        limit: jobsPerPage,
-        search: searchTerm,
-        location: locationFilter,
-        company: companyFilter
+        limit: jobsPerPage
       });
 
-      const response = await axios.get(`https://api.ozarx.in/api/jobs?${params}`);
+      const response = await axios.get(`http://localhost:5000/api/jobs?${params}`);
       
-      if (response.data.success) {
+      // Handle direct array response from backend
+      if (Array.isArray(response.data)) {
+        setJobs(response.data);
+        setTotalJobs(response.data.length);
+        setTotalPages(Math.ceil(response.data.length / jobsPerPage));
+      } else if (response.data.success) {
+        // Handle wrapped response format (if backend changes in future)
         setJobs(response.data.data || []);
         if (response.data.pagination) {
           setTotalJobs(response.data.pagination.totalJobs);
@@ -52,6 +52,11 @@ const JobListing = ({ searchResults = null }) => {
           setTotalJobs(response.data.data?.length || 0);
           setTotalPages(Math.ceil((response.data.data?.length || 0) / jobsPerPage));
         }
+      } else {
+        // Handle other response formats
+        setJobs(response.data || []);
+        setTotalJobs(response.data?.length || 0);
+        setTotalPages(Math.ceil((response.data?.length || 0) / jobsPerPage));
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -61,11 +66,7 @@ const JobListing = ({ searchResults = null }) => {
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchJobs();
-  };
+  // Removed local search form; listing now shows jobs without additional filters
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -202,55 +203,7 @@ const JobListing = ({ searchResults = null }) => {
   return (
     <div className="space-y-6">
 
-        {/* Search and Filters */}
-        {!searchResults && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8 border border-white/20">
-            <form onSubmit={handleSearch} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search jobs..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                  />
-                </div>
-                
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Location"
-                    value={locationFilter}
-                    onChange={(e) => setLocationFilter(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                  />
-                </div>
-                
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Company"
-                    value={companyFilter}
-                    onChange={(e) => setCompanyFilter(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                  />
-                </div>
-                
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                >
-                  <Filter className="w-5 h-5 inline mr-2" />
-                  Search
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+        {/* Search and Filters removed as requested */}
 
         {/* Clear Search Button */}
         {searchResults && (

@@ -65,7 +65,7 @@ const JobApplicationModal = ({ isOpen, onClose, job, onSuccess }) => {
         data.append('resume', resumeFile);
       }
 
-      const response = await axios.post('https://api.ozarx.in/api/applications', data, {
+      const response = await axios.post('http://localhost:5000/api/applications', data, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -209,13 +209,14 @@ const JobApplicationModal = ({ isOpen, onClose, job, onSuccess }) => {
                 Experience
               </label>
               <input
-                type="text"
+                type="number"
                 name="experience"
                 value={formData.experience}
                 onChange={handleChange}
                 required
+                min="0"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                placeholder="e.g., 2 years in software development"
+                placeholder="e.g., 2"
               />
             </div>
 

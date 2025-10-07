@@ -6,8 +6,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
+    "start:local": "node server-local.js",
+    "start:dev": "NODE_ENV=development node server-local.js",
+    "dev": "nodemon server-local.js",
     "build": "echo 'No build step required'",
-    "vercel-build": "echo 'No build step required'"
+    "vercel-build": "echo 'No build step required'",
+    "setup:local": "copy env.local .env && echo 'Local environment setup complete!'",
+    "setup:local:unix": "cp env.local .env && echo 'Local environment setup complete!'",
+    "optimize-db": "node optimize-database.js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +22,7 @@
   "dependencies": {
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
+    "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "exceljs": "^4.4.0",
@@ -24,7 +31,11 @@
     "mongodb": "^6.17.0",
     "mongoose": "^8.18.0",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.6",
+    "openai": "^6.1.0",
+    "razorpay": "^2.9.6",
+    "stripe": "^19.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "xlsx": "^0.18.5"

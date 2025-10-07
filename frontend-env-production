@@ -1,0 +1,13 @@
+# Production Environment Variables for Frontend
+# Copy this to frontend/.env.production
+
+VITE_API_BASE_URL=https://api.ozarx.in/api
+VITE_APP_NAME=Ozarx HR
+VITE_APP_URL=https://ozarx.in
+
+
+
+
+
+
+

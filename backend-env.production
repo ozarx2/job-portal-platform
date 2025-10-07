@@ -1,0 +1,64 @@
+# Production Environment Variables for Backend API
+# Copy this to /var/www/ozarx/backend/.env
+
+NODE_ENV=production
+PORT=5000
+
+# Database Configuration
+MONGO_URI=mongodb+srv://ozarxhr:KBfbR0EsisP4I4or@cluster0.hzykio1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+
+# JWT Configuration
+JWT_SECRET=b28571735fab77c48b368b09bf547939fef6ee05c31a52504905dccef5c9545aa898a8dbcc9bf6eac573b43db31b0a2a8cd0bbf581387a85682ff1e058a00673
+SESSION_SECRET=b28571735fab77c48b368b09bf547939fef6ee05c31a52504905dccef5c9545aa898a8dbcc9bf6eac573b43db31b0a2a8cd0bbf581387a85682ff1e058a00673
+
+# Email Configuration
+EMAIL_USER=ozarxhr@gmail.com
+EMAIL_PASS=v6Jc54@19731973
+EMAIL_FROM="Ozarx HR ozarxhr@gmail.com"
+
+# Frontend Configuration (Update with your actual domain and VM IP)
+FRONTEND_URL=https://ozarx.in
+FRONTEND_ORIGINS=https://ozarx.in,https://www.ozarx.in,https://ozarx.vercel.app,http://YOUR_VM_IP,https://api.ozarx.in
+
+# API Configuration
+API_BASE_URL=https://api.ozarx.in/api
+
+# Google OAuth Configuration (Set these environment variables on your VM)
+GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+
+# OpenAI Configuration (Set this environment variable on your VM)
+OPENAI_API_KEY=${OPENAI_API_KEY}
+
+# Stripe Configuration (Optional - Set these environment variables on your VM)
+STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+
+# Razorpay Configuration (Optional - Set these environment variables on your VM)
+RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+
+# Logging Configuration
+LOG_LEVEL=info
+LOG_FILE=/var/log/pm2/ozarx-api.log
+
+# Security Configuration
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Health Check Configuration
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_PATH=/health
+
+# GCP VM Specific Configuration
+CLUSTER_MODE=true
+MAX_MEMORY_RESTART=1G
+
+
+
+
+
+
+

@@ -50,12 +50,17 @@ const UserManagement = ({ token, onUserUpdate }) => {
         ...(roleFilter && { role: roleFilter })
       };
 
-      const response = await axios.get('https://api.ozarx.in/api/admin/users', {
+      const response = await axios.get('http://localhost:5000/api/admin/users', {
         headers,
         params
       });
 
-      if (response.data.success) {
+      // Handle direct array response from backend
+      if (Array.isArray(response.data)) {
+        setUsers(response.data);
+        setTotalPages(Math.ceil(response.data.length / 10));
+      } else if (response.data.success) {
+        // Handle wrapped response format (if backend changes in future)
         setUsers(response.data.data);
         setTotalPages(response.data.totalPages);
       } else {
@@ -76,17 +81,13 @@ const UserManagement = ({ token, onUserUpdate }) => {
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.post('https://api.ozarx.in/api/admin/users', newUser, { headers });
+      const response = await axios.post('http://localhost:5000/api/admin/users', newUser, { headers });
       
-      if (response.data.success) {
-        setSuccess('User created successfully');
-        setShowCreateModal(false);
-        setNewUser({ name: '', email: '', password: '', role: 'candidate' });
-        fetchUsers();
-        onUserUpdate && onUserUpdate();
-      } else {
-        setError(response.data.message || 'Failed to create user');
-      }
+      setSuccess('User created successfully');
+      setShowCreateModal(false);
+      setNewUser({ name: '', email: '', password: '', role: 'candidate' });
+      fetchUsers();
+      onUserUpdate && onUserUpdate();
     } catch (err) {
       console.error('Error creating user:', err);
       setError(err.response?.data?.message || 'Failed to create user');
@@ -102,7 +103,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.put(`https://api.ozarx.in/api/admin/users/${editingUser._id}`, editUser, { headers });
+      const response = await axios.put(`http://localhost:5000/api/admin/users/${editingUser._id}`, editUser, { headers });
       
       if (response.data.success) {
         setSuccess('User updated successfully');
@@ -127,7 +128,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.delete(`https://api.ozarx.in/api/admin/users/${userId}`, { headers });
+      const response = await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, { headers });
       
       if (response.data.success) {
         setSuccess('User deleted successfully');

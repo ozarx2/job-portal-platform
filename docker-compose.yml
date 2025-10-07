@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     environment:
@@ -10,12 +12,21 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - ./backend/logs:/app/logs
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ozarx-network
 
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -28,6 +39,8 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    networks:
+      - ozarx-network
 
   nginx:
     image: nginx:alpine
@@ -37,7 +50,14 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./frontend/dist:/usr/share/nginx/html
+      - ./ssl:/etc/nginx/ssl
     depends_on:
       - frontend
       - backend
     restart: unless-stopped
+    networks:
+      - ozarx-network
+
+networks:
+  ozarx-network:
+    driver: bridge

@@ -8,10 +8,10 @@ const CompanyDebugger = () => {
   const [testResults, setTestResults] = useState([]);
 
   const testEndpoints = [
-    'https://api.ozarx.in/api/companies',
-    'https://api.ozarx.in/api/company',
-    'https://api.ozarx.in/api/employers',
-    'https://api.ozarx.in/api/jobs' // To extract companies from jobs
+    'http://localhost:5000/api/companies',
+    'http://localhost:5000/api/company',
+    'http://localhost:5000/api/employers',
+    'http://localhost:5000/api/jobs' // To extract companies from jobs
   ];
 
   const testAllEndpoints = async () => {
@@ -72,9 +72,9 @@ const CompanyDebugger = () => {
       try {
         // Try different possible endpoints for creating companies
         const endpoints = [
-          'https://api.ozarx.in/api/companies',
-          'https://api.ozarx.in/api/company',
-          'https://api.ozarx.in/api/employers'
+          'http://localhost:5000/api/companies',
+          'http://localhost:5000/api/company',
+          'http://localhost:5000/api/employers'
         ];
 
         let success = false;

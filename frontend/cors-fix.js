@@ -14,7 +14,7 @@ const corsOptions = {
         'http://localhost:3001',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
-        'https://api.ozarx.in' // Add this if your frontend is served from the same domain
+        'http://localhost:5000' // Add this if your frontend is served from the same domain
       ];
     
     // Check if origin is allowed

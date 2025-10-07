@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Package Selection</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .error { background-color: #ffebee; border-color: #f44336; }
+        .success { background-color: #e8f5e8; border-color: #4caf50; }
+        .info { background-color: #e3f2fd; border-color: #2196f3; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .package { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .selected { background-color: #e3f2fd; border-color: #2196f3; }
+        pre { background-color: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug Package Selection Issue</h1>
+    
+    <div class="debug-section info">
+        <h3>🔍 Debugging Steps</h3>
+        <p>This page will help debug the package selection issue in the AssistedHiringService component.</p>
+    </div>
+
+    <div class="debug-section">
+        <h3>1. Test API Connection</h3>
+        <button onclick="testAPI()">Test Packages API</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>2. Test Package Selection Logic</h3>
+        <button onclick="testPackageSelection()">Test Selection Logic</button>
+        <div id="selection-result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>3. Simulate Frontend Component</h3>
+        <div id="package-list"></div>
+        <button onclick="simulateContinue()">Test Continue Button</button>
+        <div id="continue-result"></div>
+    </div>
+
+    <script>
+        let packages = {};
+        let selectedPackage = '';
+        let loading = false;
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p>🔄 Testing API...</p>';
+            
+            try {
+                // Get token from localStorage (if available)
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    resultDiv.innerHTML = '<div class="error"><p>❌ No authentication token found. Please login first.</p></div>';
+                    return;
+                }
+
+                const response = await fetch('/api/assisted-hiring/packages', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.packages) {
+                    packages = data.packages;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <p>✅ API Response Successful</p>
+                            <p>📦 Found ${Object.keys(packages).length} packages: ${Object.keys(packages).join(', ')}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                    renderPackages();
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <p>❌ API Response Error</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ API Request Failed</p>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function testPackageSelection() {
+            const resultDiv = document.getElementById('selection-result');
+            
+            if (Object.keys(packages).length === 0) {
+                resultDiv.innerHTML = '<div class="error"><p>❌ No packages loaded. Test API first.</p></div>';
+                return;
+            }
+
+            const packageKeys = Object.keys(packages);
+            const testPackage = packageKeys[0];
+            
+            // Simulate package selection
+            selectedPackage = testPackage;
+            
+            resultDiv.innerHTML = `
+                <div class="success">
+                    <p>✅ Package Selection Test</p>
+                    <p>📦 Selected package: ${selectedPackage}</p>
+                    <p>🔘 Continue button should be: ${selectedPackage ? 'ENABLED' : 'DISABLED'}</p>
+                    <p>⏳ Loading state: ${loading ? 'TRUE' : 'FALSE'}</p>
+                    <p>🎯 Button condition (!selectedPackage || loading): ${!selectedPackage || loading}</p>
+                </div>
+            `;
+        }
+
+        function renderPackages() {
+            const packageListDiv = document.getElementById('package-list');
+            
+            if (Object.keys(packages).length === 0) {
+                packageListDiv.innerHTML = '<p>No packages available</p>';
+                return;
+            }
+
+            let html = '<h4>Available Packages:</h4>';
+            Object.entries(packages).forEach(([key, pkg]) => {
+                const isSelected = selectedPackage === key;
+                html += `
+                    <div class="package ${isSelected ? 'selected' : ''}" onclick="selectPackage('${key}')">
+                        <h5>${pkg.name}</h5>
+                        <p>${pkg.description}</p>
+                        <p><strong>Price: ${pkg.price.currency} ${pkg.price.amount}</strong></p>
+                        <p>Features: ${pkg.features.length} items</p>
+                        ${isSelected ? '<p><strong>✅ SELECTED</strong></p>' : ''}
+                    </div>
+                `;
+            });
+            
+            packageListDiv.innerHTML = html;
+        }
+
+        function selectPackage(packageKey) {
+            selectedPackage = packageKey;
+            renderPackages();
+            
+            const resultDiv = document.getElementById('continue-result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <p>📦 Package selected: ${selectedPackage}</p>
+                    <p>🔘 Continue button status: ${selectedPackage ? 'ENABLED' : 'DISABLED'}</p>
+                </div>
+            `;
+        }
+
+        function simulateContinue() {
+            const resultDiv = document.getElementById('continue-result');
+            
+            if (!selectedPackage) {
+                resultDiv.innerHTML = '<div class="error"><p>❌ No package selected. Please select a package first.</p></div>';
+                return;
+            }
+
+            if (loading) {
+                resultDiv.innerHTML = '<div class="error"><p>❌ Still loading. Please wait.</p></div>';
+                return;
+            }
+
+            resultDiv.innerHTML = `
+                <div class="success">
+                    <p>✅ Continue button would be activated!</p>
+                    <p>📦 Selected package: ${selectedPackage}</p>
+                    <p>🎯 Package data: ${JSON.stringify(packages[selectedPackage], null, 2)}</p>
+                </div>
+            `;
+        }
+
+        // Check if user is logged in
+        window.onload = function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                document.getElementById('api-result').innerHTML = `
+                    <div class="error">
+                        <p>❌ No authentication token found.</p>
+                        <p>Please login to the application first, then refresh this page.</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('api-result').innerHTML = `
+                    <div class="info">
+                        <p>✅ Authentication token found.</p>
+                        <p>Click "Test Packages API" to proceed.</p>
+                    </div>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>

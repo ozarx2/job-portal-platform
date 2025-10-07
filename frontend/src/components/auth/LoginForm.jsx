@@ -93,7 +93,9 @@ const LoginForm = () => {
       console.error('Login error:', err);
       
       if (err.response?.status === 401) {
-        setError('Invalid email or password.');
+        setError('Incorrect email or password.');
+      } else if (err.response?.status === 400 || /validation/i.test(err.response?.data?.message || '')) {
+        setError('Please check your email and password and try again.');
       } else if (err.response?.status === 403) {
         setError('Account is deactivated. Contact support.');
       } else if (err.code === 'ERR_NETWORK') {

@@ -8,6 +8,27 @@ const path = require('path');
 const User = require('../models/User');
 const CandidateProfile = require('../models/CandidatesProfile');
 
+// GET /api/agent-applications - Get all agent applications
+router.get('/', async (req, res) => {
+  try {
+    const applications = await CandidateProfile.find()
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: applications,
+      count: applications.length
+    });
+  } catch (err) {
+    console.error('Error fetching agent applications:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching agent applications' 
+    });
+  }
+});
+
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '..', 'uploads', 'resumes');
 if (!fs.existsSync(uploadDir)) {

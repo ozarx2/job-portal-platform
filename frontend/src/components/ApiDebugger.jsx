@@ -6,9 +6,9 @@ export default function ApiDebugger() {
   const [loading, setLoading] = useState(false);
 
   const testEndpoints = [
-    { name: 'Primary API (api.ozarx.in)', url: 'https://api.ozarx.in/api/health' },
-    { name: 'Jobs Endpoint (Primary)', url: 'https://api.ozarx.in/api/jobs?page=1&limit=5' },
-    { name: 'Companies Endpoint (Primary)', url: 'https://api.ozarx.in/api/companies' }
+    { name: 'Primary API (api.ozarx.in)', url: 'http://localhost:5000/api/health' },
+    { name: 'Jobs Endpoint (Primary)', url: 'http://localhost:5000/api/jobs?page=1&limit=5' },
+    { name: 'Companies Endpoint (Primary)', url: 'http://localhost:5000/api/companies' }
   ];
 
   const testEndpoint = async (endpoint) => {

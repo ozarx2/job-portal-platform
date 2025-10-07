@@ -43,12 +43,18 @@ const CompanyManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://api.ozarx.in/api/companies', {
+      const response = await axios.get('http://localhost:5000/api/companies', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.data.success) {
+      // Handle direct array response from backend
+      if (Array.isArray(response.data)) {
+        setCompanies(response.data);
+      } else if (response.data.success) {
+        // Handle wrapped response format (if backend changes in future)
         setCompanies(response.data.data || []);
+      } else {
+        setCompanies([]);
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -111,37 +117,33 @@ const CompanyManagement = () => {
       
       if (editingCompany) {
         // Update existing company
-        const response = await axios.put(`https://api.ozarx.in/api/companies/${editingCompany._id}`, formDataToSend, {
+        const response = await axios.put(`http://localhost:5000/api/companies/${editingCompany._id}`, formDataToSend, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
           }
         });
         
-        if (response.data.success) {
-          setMessage('Company updated successfully!');
-          setMessageType('success');
-          setEditingCompany(null);
-          setShowForm(false);
-          resetForm();
-          fetchCompanies();
-        }
+        setMessage('Company updated successfully!');
+        setMessageType('success');
+        setEditingCompany(null);
+        setShowForm(false);
+        resetForm();
+        fetchCompanies();
       } else {
         // Create new company
-        const response = await axios.post('https://api.ozarx.in/api/companies', formDataToSend, {
+        const response = await axios.post('http://localhost:5000/api/companies', formDataToSend, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
           }
         });
         
-        if (response.data.success) {
-          setMessage('Company created successfully!');
-          setMessageType('success');
-          setShowForm(false);
-          resetForm();
-          fetchCompanies();
-        }
+        setMessage('Company created successfully!');
+        setMessageType('success');
+        setShowForm(false);
+        resetForm();
+        fetchCompanies();
       }
     } catch (error) {
       console.error('Error saving company:', error);
@@ -185,15 +187,13 @@ const CompanyManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`https://api.ozarx.in/api/companies/${companyId}`, {
+      const response = await axios.delete(`http://localhost:5000/api/companies/${companyId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.data.success) {
-        setMessage('Company deleted successfully!');
-        setMessageType('success');
-        fetchCompanies();
-      }
+      setMessage('Company deleted successfully!');
+      setMessageType('success');
+      fetchCompanies();
     } catch (error) {
       console.error('Error deleting company:', error);
       setMessage('Failed to delete company');

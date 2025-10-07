@@ -17,6 +17,9 @@ export function AppProvider({ children }) {
     notifications: []
   });
 
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('info'); // 'info', 'success', 'error', 'warning'
+
   const refreshData = async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
@@ -150,7 +153,11 @@ export function AppProvider({ children }) {
     createJob,
     addNotification,
     removeNotification,
-    clearNotifications
+    clearNotifications,
+    message,
+    setMessage,
+    messageType,
+    setMessageType
   };
 
   return React.createElement(AppContext.Provider, { value }, children);

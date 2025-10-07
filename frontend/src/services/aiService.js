@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 class AIService {
   constructor() {
@@ -165,6 +165,13 @@ class AIService {
 }
 
 export default new AIService();
+
+
+
+
+
+
+
 
 
 

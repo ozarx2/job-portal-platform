@@ -77,9 +77,18 @@ const JobSearch = ({ onSearchResults, onSearchChange }) => {
         limit: 20
       });
 
-      const response = await axios.get(`https://api.ozarx.in/api/jobs?${params}`);
+      const response = await axios.get(`http://localhost:5000/api/jobs?${params}`);
       
-      if (response.data.success) {
+      // Handle direct array response from backend
+      if (Array.isArray(response.data)) {
+        onSearchResults(response.data);
+        onSearchChange({ searchTerm, location, filters });
+        
+        // Add to search history
+        const searchQuery = { searchTerm, location, filters, timestamp: new Date() };
+        setSearchHistory(prev => [searchQuery, ...prev.slice(0, 4)]); // Keep last 5 searches
+      } else if (response.data.success) {
+        // Handle wrapped response format (if backend changes in future)
         onSearchResults(response.data.data);
         onSearchChange({ searchTerm, location, filters });
         

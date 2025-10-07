@@ -9,6 +9,7 @@ import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
 import ResendVerification from './components/auth/ResendVerification';
 import NotificationSystem from './components/NotificationSystem';
+import EnhancedNotificationSystem from './components/EnhancedNotificationSystem';
 import DashboardStatus from './components/DashboardStatus';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -20,6 +21,7 @@ import EmployerDashboard from './pages/EmployerDashboard';
 import AdminDashboard from './pages/AdminDashboard';  
 import AgentDashboard from './pages/AgentDashboard';
 import Reports from './pages/Reports';
+import ResumeSearch from './pages/ResumeSearch';
 import RoleRedirect from './components/auth/RoleRedirect';
 import NotFound from './components/common/NotFound';
 
@@ -46,10 +48,12 @@ function App() {
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/agent-dashboard" element={<AgentDashboard/>}/>
           <Route path="/reports" element={<Reports/>}/>
+          <Route path="/resume-search" element={<ResumeSearch />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
         <NotificationSystem />
+        <EnhancedNotificationSystem />
         <DashboardStatus />
       </Router>
     </AppProvider>

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import SimpleJobApplicationForm from '../components/SimpleJobApplicationForm';
 import IndividualDocumentUpload from '../components/onboarding/IndividualDocumentUpload';
+import ProfileImageUpload from '../components/ProfileImageUpload';
 import { formatJobId } from '../utils/jobIdGenerator';
 import onboardingService from '../services/onboardingService';
 
@@ -16,9 +17,16 @@ export default function CandidateDashboard() {
     name: '',
     email: '',
     phone: '',
-    image: null,
+    location: '',
+    experience: '',
+    education: '',
     skills: [],
+    bio: '',
+    website: '',
+    linkedin: '',
+    github: '',
   }));
+  const [profileImage, setProfileImage] = useState(null);
   const [resumeFile, setResumeFile] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
@@ -67,6 +75,9 @@ export default function CandidateDashboard() {
     app.status === 'Selected' || app.status === 'Hired' || app.status === 'Onboarding'
   );
   const [isNewUser, setIsNewUser] = useState(false);
+  
+  // Ref to track current object URL for cleanup
+  const currentImageUrl = useRef(null);
 
   // Onboarding documents state
   const [onboardingData, setOnboardingData] = useState(() => ({
@@ -128,16 +139,89 @@ export default function CandidateDashboard() {
     }
   }, [location.state]);
 
+  // Cleanup object URL on unmount or image change
+  useEffect(() => {
+    return () => {
+      if (currentImageUrl.current) {
+        URL.revokeObjectURL(currentImageUrl.current);
+      }
+    };
+  }, []);
+
+  // Cleanup object URL when profile image changes
+  useEffect(() => {
+    if (profileImage && profileImage instanceof File) {
+      getImageUrl(profileImage);
+    } else if (!profileImage) {
+      // Clean up object URL when image is removed
+      if (currentImageUrl.current) {
+        URL.revokeObjectURL(currentImageUrl.current);
+        currentImageUrl.current = null;
+      }
+    }
+  }, [profileImage]);
+
+  // Helper function to safely create object URL
+  const getImageUrl = (imageFile) => {
+    if (!imageFile) {
+      return null;
+    }
+    
+    // If it's already a URL string, return it (handle both relative and absolute URLs)
+    if (typeof imageFile === 'string') {
+      // If it's a relative URL, make it absolute
+      if (imageFile.startsWith('/uploads/')) {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        return `${API_BASE_URL}${imageFile}`;
+      }
+      return imageFile;
+    }
+    
+    // If it's not a File object, return null
+    if (!(imageFile instanceof File)) {
+      return null;
+    }
+    
+    // Clean up previous URL
+    if (currentImageUrl.current) {
+      URL.revokeObjectURL(currentImageUrl.current);
+    }
+    
+    // Create new URL
+    try {
+      const url = URL.createObjectURL(imageFile);
+      currentImageUrl.current = url;
+      return url;
+    } catch (error) {
+      console.error('Error creating object URL:', error);
+      return null;
+    }
+  };
+
   const fetchJobs = async () => {
     setLoading(prev => ({ ...prev, jobs: true }));
     try {
-      const res = await axios.get('https://api.ozarx.in/api/jobs', {
-        timeout: 10000 // 10 second timeout
+      console.log('🔄 Fetching jobs for candidate...');
+      const res = await axios.get(`http://localhost:5000/api/jobs?t=${Date.now()}`, {
+        timeout: 30000 // 30 second timeout for heavy operations
       });
-      setJobs(res.data.data || []);
+      console.log('📦 Jobs API response:', res.data);
+      
+      // Handle both response formats: direct array or {data: array}
+      let jobsArray = [];
+      if (Array.isArray(res.data)) {
+        jobsArray = res.data;
+      } else if (res.data && Array.isArray(res.data.data)) {
+        jobsArray = res.data.data;
+      } else {
+        console.warn('⚠️ Unexpected jobs response format:', res.data);
+      }
+      
+      console.log('✅ Jobs loaded successfully:', jobsArray.length, 'jobs');
+      setJobs(jobsArray);
       setRetryCount(prev => ({ ...prev, jobs: 0 })); // Reset retry count on success
     } catch (err) {
-      console.error('Error fetching jobs:', err.message);
+      console.error('❌ Error fetching jobs:', err.message);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch jobs';
       setMessage(`${errorMessage}. ${retryCount.jobs < 3 ? 'Retrying...' : 'Please check your connection and try again.'}`);
       setMessageType('error');
@@ -153,8 +237,8 @@ export default function CandidateDashboard() {
   const fetchApplications = async () => {
     setLoading(prev => ({ ...prev, applications: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
-      const res = await axios.get(`${API_BASE_URL}/applications/me`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const res = await axios.get(`${API_BASE_URL}/applications/me?t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log('Applications API Response:', res.data);
@@ -181,11 +265,13 @@ export default function CandidateDashboard() {
   const fetchProfile = async () => {
     setLoading(prev => ({ ...prev, profile: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       const res = await axios.get(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setProfile(res.data.user || {});
+      const userData = res.data.user || {};
+      setProfile(userData);
+      setProfileImage(userData.profileImage || null);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setMessage('Failed to fetch profile. Please try again.');
@@ -198,8 +284,8 @@ export default function CandidateDashboard() {
   const fetchSelectedJobs = async () => {
     setLoading(prev => ({ ...prev, selectedJobs: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
-      const res = await axios.get(`${API_BASE_URL}/applications/selected`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const res = await axios.get(`${API_BASE_URL}/applications/selected?t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSelectedJobs(res.data.selectedJobs || []);
@@ -215,9 +301,9 @@ export default function CandidateDashboard() {
   const fetchProfileStatus = async () => {
     setLoading(prev => ({ ...prev, profileStatus: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       console.log('Fetching profile status from:', `${API_BASE_URL}/applications/profile-status`);
-      const res = await axios.get(`${API_BASE_URL}/applications/profile-status`, {
+      const res = await axios.get(`${API_BASE_URL}/applications/profile-status?t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log('Profile status response:', res.data);
@@ -242,18 +328,23 @@ export default function CandidateDashboard() {
     if (name === 'skills') {
       const skillsArray = value ? value.split(',').map(s => s.trim()).filter(s => s.length > 0) : [];
       setProfile({ ...profile, [name]: skillsArray });
+    } else if (name === 'experience') {
+      // Handle experience as number
+      const numValue = value === '' ? '' : parseInt(value);
+      setProfile({ ...profile, [name]: numValue });
     } else {
       setProfile({ ...profile, [name]: value });
     }
   };
 
-  const handleProfileImageChange = (e) => {
-    setProfile({ ...profile, image: e.target.files[0] });
+  const handleProfileImageUpdate = (image) => {
+    setProfileImage(image);
   };
 
   const handleResumeUpload = (e) => {
     setResumeFile(e.target.files[0]);
   };
+
 
   const updateProfile = async (e) => {
     e.preventDefault();
@@ -276,7 +367,9 @@ export default function CandidateDashboard() {
       formData.append('email', profile.email.trim());
       if (profile.phone) formData.append('phone', profile.phone.trim());
       if (profile.location) formData.append('location', profile.location.trim());
-      if (profile.experience) formData.append('experience', profile.experience.toString());
+      if (profile.experience !== undefined && profile.experience !== null && profile.experience !== '') {
+        formData.append('experience', profile.experience);
+      }
       if (profile.education) formData.append('education', profile.education.trim());
       const skillsArray = getSkillsAsArray(profile.skills);
       if (skillsArray.length > 0) formData.append('skills', skillsArray.join(', '));
@@ -284,10 +377,10 @@ export default function CandidateDashboard() {
       if (profile.website) formData.append('website', profile.website.trim());
       if (profile.linkedin) formData.append('linkedin', profile.linkedin.trim());
       if (profile.github) formData.append('github', profile.github.trim());
-      if (profile.image) formData.append('image', profile.image);
+      // Note: Profile image is handled separately by ProfileImageUpload component
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
-      await axios.put(`${API_BASE_URL}/users/profile`, formData, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      await axios.put(`${API_BASE_URL}/users/profile?t=${Date.now()}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -302,7 +395,25 @@ export default function CandidateDashboard() {
       fetchProfileStatus();
     } catch (error) {
       console.error('Profile update error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      let errorMessage = 'Failed to update profile';
+      
+      if (error.response?.status === 500) {
+        errorMessage = 'Server error occurred. Please try again or contact support.';
+      } else if (error.response?.status === 413) {
+        errorMessage = 'File size too large. Please select a smaller image.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.message || 'Invalid data provided. Please check your inputs.';
+      } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       setMessage(errorMessage);
       setMessageType('error');
     } finally {
@@ -322,7 +433,7 @@ export default function CandidateDashboard() {
       const formData = new FormData();
       formData.append('resume', resumeFile);
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       await axios.post(`${API_BASE_URL}/users/resume`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -355,14 +466,13 @@ export default function CandidateDashboard() {
       }
     }
     
-    // TEMPORARILY BYPASS PROFILE COMPLETION CHECK FOR TESTING
     // Check if profile is complete before showing application form
-    // if (!profileStatus.isComplete && profileStatus.missingFields && profileStatus.missingFields.length > 0) {
-    //   setMessage(`Please complete your profile before applying. Missing: ${profileStatus.missingFields.join(', ')}`);
-    //   setMessageType('warning');
-    //   setActiveTab('profile');
-    //   return;
-    // }
+    if (!profileStatus.isComplete && profileStatus.missingFields && profileStatus.missingFields.length > 0) {
+      setMessage(`Please complete your profile before applying for jobs. This helps employers find you more easily. Missing: ${profileStatus.missingFields.join(', ')}`);
+      setMessageType('warning');
+      setActiveTab('profile');
+      return;
+    }
     
     // Show application form
     console.log('Showing application form for job:', job);
@@ -475,7 +585,7 @@ export default function CandidateDashboard() {
         }
       });
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       await axios.post(`${API_BASE_URL}/users/onboarding/submit`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -612,6 +722,12 @@ export default function CandidateDashboard() {
     job?.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     job?.location?.toLowerCase().includes(searchTerm.toLowerCase())
   ) : [];
+  
+  // Debug logging (only when jobs change)
+  // console.log('🔍 Jobs state:', jobs);
+  // console.log('🔍 Jobs length:', jobs?.length);
+  // console.log('🔍 Filtered jobs:', filteredJobs);
+  // console.log('🔍 Filtered jobs length:', filteredJobs?.length);
 
   const filteredApplications = Array.isArray(applications) ? applications.filter(app => 
     filterStatus === 'all' || app?.status === filterStatus
@@ -682,15 +798,25 @@ export default function CandidateDashboard() {
                 <div className="text-2xl font-bold text-white">{selectedJobs?.length || 0}</div>
                 <div className="text-sm text-blue-100">Selected</div>
               </div>
-              {profile.image && (
+              {profileImage && (
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/20">
                   <img 
-                    src={URL.createObjectURL(profile.image)} 
+                    src={getImageUrl(profileImage)} 
                     alt="Profile" 
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.warn('Failed to load profile image');
+                      e.target.style.display = 'none';
+                    }}
                   />
                 </div>
               )}
+              <button
+                onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
@@ -833,31 +959,81 @@ export default function CandidateDashboard() {
 
         {/* Profile Completion Banner */}
         {!profileStatus.isComplete && profileStatus.missingFields.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 p-4 rounded-lg shadow-sm">
+          <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-400 p-6 rounded-xl shadow-lg">
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
               </div>
-              <div className="ml-3 flex-1">
-                <h3 className="text-sm font-medium text-amber-800">
-                  Complete Your Profile to Apply for Jobs
-                </h3>
-                <div className="mt-2 text-sm text-amber-700">
-                  <p>Your profile is {profileStatus.completionPercentage}% complete. Please fill in the following fields:</p>
-                  <ul className="mt-2 list-disc list-inside">
-                    {profileStatus.missingFields.map((field, index) => (
-                      <li key={index}>{field}</li>
-                    ))}
-                  </ul>
+              <div className="ml-4 flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-blue-900">
+                    🚀 Complete Your Profile for Better Job Matches
+                  </h3>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600">{profileStatus.completionPercentage}%</div>
+                    <div className="text-xs text-blue-600">Complete</div>
+                  </div>
                 </div>
                 <div className="mt-3">
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                      style={{ width: `${profileStatus.completionPercentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+                <div className="mt-4 text-sm text-blue-800">
+                  <p className="font-medium mb-2">Complete your profile to:</p>
+                  <ul className="space-y-1 text-sm">
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Apply for jobs more easily
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Get noticed by more employers
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Increase your chances of getting hired
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-blue-800 mb-2">Still need to add:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {profileStatus.missingFields.map((field, index) => (
+                      <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {field}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-4 flex space-x-3">
                   <button
                     onClick={() => setActiveTab('profile')}
-                    className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors duration-200"
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200 flex items-center"
                   >
-                    Complete Profile
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Complete Profile Now
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('jobs')}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200"
+                  >
+                    Browse Jobs Anyway →
                   </button>
                 </div>
               </div>
@@ -1177,25 +1353,44 @@ export default function CandidateDashboard() {
                       </div>
                     </div>
                     
-                    <button
-                      onClick={() => applyJob(job)}
-                      disabled={loading.submitting}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading.submitting ? (
-                        <>
-                          <LoadingSpinner size="w-4 h-4" />
-                          <span>Applying...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Apply Now</span>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                        </>
-                      )}
-                    </button>
+                    {(() => {
+                      const application = applications.find(app => app.job?._id === job._id);
+                      
+                      if (application) {
+                        // User has already applied
+                        return (
+                          <div className="w-full bg-gray-100 text-gray-600 px-4 py-3 rounded-xl font-medium flex items-center justify-center space-x-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Already Applied</span>
+                          </div>
+                        );
+                      } else {
+                        // User can apply
+                        return (
+                          <button
+                            onClick={() => applyJob(job)}
+                            disabled={loading.submitting}
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {loading.submitting ? (
+                              <>
+                                <LoadingSpinner size="w-4 h-4" />
+                                <span>Applying...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Apply Now</span>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                              </>
+                            )}
+                          </button>
+                        );
+                      }
+                    })()}
                   </div>
                 ))}
               </div>
@@ -1374,7 +1569,67 @@ export default function CandidateDashboard() {
         {/* Profile Tab */}
         {activeTab === 'profile' && (
           <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-gray-900">Profile Management</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-bold text-gray-900">Profile Management</h2>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-indigo-600">{profileStatus.completionPercentage}%</div>
+                <div className="text-sm text-gray-600">Profile Complete</div>
+              </div>
+            </div>
+            
+            {/* Profile Completion Progress */}
+            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-indigo-900">Profile Completion Status</h3>
+                <div className="flex items-center space-x-2">
+                  {profileStatus.isComplete ? (
+                    <div className="flex items-center text-green-600">
+                      <svg className="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-medium">Complete!</span>
+                    </div>
+                  ) : (
+                    <div className="text-amber-600 font-medium">
+                      {profileStatus.missingFields.length} fields remaining
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <div className="w-full bg-indigo-200 rounded-full h-3">
+                  <div 
+                    className="bg-indigo-600 h-3 rounded-full transition-all duration-500" 
+                    style={{ width: `${profileStatus.completionPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+              
+              {!profileStatus.isComplete && profileStatus.missingFields.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm text-indigo-800 mb-2">Complete these fields to finish your profile:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {profileStatus.missingFields.map((field, index) => (
+                      <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                        {field}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {profileStatus.isComplete && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-green-800 font-medium">Excellent! Your profile is complete and ready for job applications.</span>
+                  </div>
+                </div>
+              )}
+            </div>
             
             <form onSubmit={updateProfile} className="space-y-6">
               <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -1390,7 +1645,7 @@ export default function CandidateDashboard() {
                     <input
                       type="text"
                       name="name"
-                      value={profile.name}
+                      value={profile.name || ''}
                       onChange={handleProfileChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                       placeholder="Enter your full name"
@@ -1402,7 +1657,7 @@ export default function CandidateDashboard() {
                     <input
                       type="email"
                       name="email"
-                      value={profile.email}
+                      value={profile.email || ''}
                       onChange={handleProfileChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                       placeholder="Enter your email address"
@@ -1414,7 +1669,7 @@ export default function CandidateDashboard() {
                     <input
                       type="tel"
                       name="phone"
-                      value={profile.phone}
+                      value={profile.phone || ''}
                       onChange={handleProfileChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                       placeholder="Enter your phone number"
@@ -1426,7 +1681,7 @@ export default function CandidateDashboard() {
                     <input
                       type="text"
                       name="location"
-                      value={profile.location}
+                      value={profile.location || ''}
                       onChange={handleProfileChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                       placeholder="Enter your location"
@@ -1448,18 +1703,25 @@ export default function CandidateDashboard() {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Experience Level</label>
                     <select
                       name="experience"
-                      value={profile.experience}
+                      value={profile.experience || ''}
                       onChange={handleProfileChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                     >
                       <option value="">Select experience level</option>
-                      <option value="0-1 years">0-1 years</option>
-                      <option value="1-2 years">1-2 years</option>
-                      <option value="2-3 years">2-3 years</option>
-                      <option value="3-5 years">3-5 years</option>
-                      <option value="5-7 years">5-7 years</option>
-                      <option value="7-10 years">7-10 years</option>
-                      <option value="10+ years">10+ years</option>
+                      <option value="0">0 years (Fresh Graduate)</option>
+                      <option value="1">1 year</option>
+                      <option value="2">2 years</option>
+                      <option value="3">3 years</option>
+                      <option value="4">4 years</option>
+                      <option value="5">5 years</option>
+                      <option value="6">6 years</option>
+                      <option value="7">7 years</option>
+                      <option value="8">8 years</option>
+                      <option value="9">9 years</option>
+                      <option value="10">10 years</option>
+                      <option value="15">15 years</option>
+                      <option value="20">20 years</option>
+                      <option value="25">25+ years</option>
                     </select>
                     {validationErrors.experience && <p className="mt-1 text-sm text-red-600">{validationErrors.experience}</p>}
                   </div>
@@ -1468,7 +1730,7 @@ export default function CandidateDashboard() {
                     <input
                       type="text"
                       name="education"
-                      value={profile.education}
+                      value={profile.education || ''}
                       onChange={handleProfileChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                       placeholder="Enter your education"
@@ -1491,7 +1753,7 @@ export default function CandidateDashboard() {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Bio</label>
                     <textarea
                       name="bio"
-                      value={profile.bio}
+                      value={profile.bio || ''}
                       onChange={handleProfileChange}
                       rows={4}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
@@ -1502,41 +1764,13 @@ export default function CandidateDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  Profile Picture
-                </h3>
-                <div className="flex items-center space-x-6">
-                  <div className="flex-shrink-0">
-                    <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                      {profile.image ? (
-                        <img
-                          src={URL.createObjectURL(profile.image)}
-                          alt="Profile"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <svg className="h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="file"
-                      name="image"
-                      accept="image/*"
-                      onChange={handleProfileChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">Upload a profile picture (JPG, PNG, GIF)</p>
-                  </div>
-                </div>
-              </div>
+              <ProfileImageUpload 
+                currentImage={profileImage}
+                onImageUpdate={handleProfileImageUpdate}
+                onError={(error) => {
+                  console.error('Profile image error:', error);
+                }}
+              />
 
               <div className="flex justify-end">
                 <button

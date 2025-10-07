@@ -1,16 +1,16 @@
 import axios from 'axios';
 
 // Use GCP backend API
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 // Fallback API URL for when primary API is down
-const FALLBACK_API_URL = import.meta.env.VITE_FALLBACK_API_URL || 'https://api.ozarx.in/api';
+const FALLBACK_API_URL = import.meta.env.VITE_FALLBACK_API_URL || 'http://localhost:5000/api';
 
 class ApiService {
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: 30000, // Increased to 30 seconds for heavy operations
       withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ class ApiService {
         // Try fallback API
         const fallbackClient = axios.create({
           baseURL: FALLBACK_API_URL,
-          timeout: 10000,
+          timeout: 30000, // Increased to 30 seconds for heavy operations
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
@@ -197,13 +197,21 @@ class ApiService {
     return this.client.get('/companies');
   }
 
+  async getUserCompanies() {
+    return this.client.get('/companies/user');
+  }
+
   // Candidate search endpoints
   async searchCandidates(searchParams) {
     return this.client.get('/candidates/search', { params: searchParams });
   }
 
-  async contactCandidate(candidateId) {
-    return this.client.post(`/candidates/${candidateId}/contact`);
+  async getCandidate(candidateId) {
+    return this.client.get(`/candidates/${candidateId}`);
+  }
+
+  async contactCandidate(candidateId, messageData) {
+    return this.client.post(`/candidates/${candidateId}/contact`, messageData);
   }
 
   async createCompany(companyData) {
@@ -357,6 +365,19 @@ class ApiService {
   async confirmPayment(serviceId, paymentIntentId) {
     return this.client.post(`/assisted-hiring/${serviceId}/confirm-payment`, {
       paymentIntentId
+    });
+  }
+
+  // Razorpay payment methods
+  async createRazorpayOrder(serviceId) {
+    return this.client.post(`/assisted-hiring/${serviceId}/create-razorpay-order`);
+  }
+
+  async verifyRazorpayPayment(serviceId, orderId, paymentId, signature) {
+    return this.client.post(`/assisted-hiring/${serviceId}/verify-razorpay-payment`, {
+      orderId,
+      paymentId,
+      signature
     });
   }
 

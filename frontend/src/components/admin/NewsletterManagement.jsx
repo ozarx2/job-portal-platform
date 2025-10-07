@@ -19,7 +19,7 @@ const NewsletterManagement = () => {
   const fetchSubscriberCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       
       const response = await axios.get(`${API_BASE_URL}/email/newsletter/subscribers`, {
         headers: {
@@ -50,7 +50,7 @@ const NewsletterManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       
       const response = await axios.post(`${API_BASE_URL}/email/newsletter/send`, formData, {
         headers: {
@@ -80,7 +80,7 @@ const NewsletterManagement = () => {
   const testEmail = async (type) => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       
       const response = await axios.post(`${API_BASE_URL}/email/test`, {
         email: 'test@example.com',
@@ -192,22 +192,7 @@ const NewsletterManagement = () => {
                 'Send Newsletter'
               )}
             </button>
-
-            <button
-              type="button"
-              onClick={() => testEmail('welcome')}
-              className="px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 font-semibold"
-            >
-              Test Welcome
-            </button>
-
-            <button
-              type="button"
-              onClick={() => testEmail('newsletter')}
-              className="px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 font-semibold"
-            >
-              Test Newsletter
-            </button>
+            {/* Test buttons removed for production */}
           </div>
         </form>
 
@@ -234,5 +219,10 @@ const NewsletterManagement = () => {
 };
 
 export default NewsletterManagement;
+
+
+
+
+
 
 

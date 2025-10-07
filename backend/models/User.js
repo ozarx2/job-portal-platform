@@ -6,12 +6,13 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   password: String,
   role: { type: String, enum: ['candidate', 'employer','admin','agent'], default: 'candidate' },
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, // Primary company (for backward compatibility)
+  companies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Company' }], // Multiple companies support
   resumeUrl: String,
   createdAt: { type: Date, default: Date.now },
   profileImage: { type: String },
   skills: { type: [String] },
-  experience: { type: Number },
+  experience: { type: Number, default: 0 },
   education: { type: String },
   location: { type: String },
   phone: { type: String },

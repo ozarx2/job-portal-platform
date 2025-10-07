@@ -6,7 +6,7 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  const navItems = ["Home", "About", "Services", "Careers", "Contact", "login"];
+  const navItems = ["Home", "About", "Services", "Resume Search", "Contact", "login"];
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -22,7 +22,7 @@ const Header = () => {
             {navItems.map((item) => (
               <Link
                 key={item}
-                to={`/${item.toLowerCase()}`}
+                to={item === "Resume Search" ? "/resume-search" : `/${item.toLowerCase()}`}
                 className="hover:text-blue-600 transition duration-300"
               >
                 {item}
@@ -46,16 +46,7 @@ const Header = () => {
               Get Started
             </a>
           </div>
-          <button
-  onClick={() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  }}
-  className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
->
-  Logout
-</button>
+          {/* Logout button removed as requested */}
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
@@ -73,7 +64,7 @@ const Header = () => {
             {navItems.map((item) => (
               <Link
                 key={item}
-                to={`/${item.toLowerCase()}`}
+                to={item === "Resume Search" ? "/resume-search" : `/${item.toLowerCase()}`}
                 className="block text-gray-700 hover:text-blue-600 transition"
                 onClick={() => setIsOpen(false)}
               >

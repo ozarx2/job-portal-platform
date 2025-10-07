@@ -111,7 +111,7 @@ export default function ImportLeads({ onImportSuccess }) {
 
     try {
       const res = await axios.post(
-        "https://api.ozarx.in/api/crm/leads/import",
+        "http://localhost:5000/api/crm/leads/import",
         { mappedData },
         { 
           headers: {

@@ -17,7 +17,7 @@ export default function AgentDashboard() {
     converted: []
   });
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
   const token = localStorage.getItem("token");
 
@@ -164,6 +164,12 @@ export default function AgentDashboard() {
                   <p className="text-sm font-medium text-gray-800">Welcome back,</p>
                   <p className="text-lg font-bold text-gray-900">{agentName}</p>
                 </div>
+                <button
+                  onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </div>

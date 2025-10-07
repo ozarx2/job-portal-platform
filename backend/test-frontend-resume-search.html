@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Search Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .search-form { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .results { margin-top: 20px; }
+        .candidate { background: white; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 4px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .loading { color: #007bff; }
+        .debug { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Resume Search Test Page</h1>
+        <p>This page tests the resume search API directly to verify it's working correctly.</p>
+        
+        <div class="search-form">
+            <h3>Search Candidates</h3>
+            <form id="searchForm">
+                <div class="form-group">
+                    <label for="query">Search Query:</label>
+                    <input type="text" id="query" placeholder="e.g., react, javascript, python">
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location:</label>
+                    <input type="text" id="location" placeholder="e.g., Bangalore, Mumbai">
+                </div>
+                
+                <div class="form-group">
+                    <label for="skills">Skills:</label>
+                    <input type="text" id="skills" placeholder="e.g., React, Node.js, Python">
+                </div>
+                
+                <div class="form-group">
+                    <label for="experience">Experience:</label>
+                    <select id="experience">
+                        <option value="">Any experience</option>
+                        <option value="0-1 years">0-1 years</option>
+                        <option value="1-2 years">1-2 years</option>
+                        <option value="2-3 years">2-3 years</option>
+                        <option value="3-5 years">3-5 years</option>
+                        <option value="5-7 years">5-7 years</option>
+                        <option value="7-10 years">7-10 years</option>
+                        <option value="10+ years">10+ years</option>
+                    </select>
+                </div>
+                
+                <button type="submit">Search Candidates</button>
+            </form>
+        </div>
+        
+        <div id="debug" class="debug" style="display: none;"></div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="loading" class="loading" style="display: none;">Searching candidates...</div>
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+        
+        // Login first to get authentication token
+        async function login() {
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'testemployer@example.com',
+                        password: 'TestPass123!'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    console.log('✅ Authentication successful');
+                    return true;
+                } else {
+                    console.error('❌ Authentication failed:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Authentication error:', error);
+                return false;
+            }
+        }
+        
+        // Search candidates
+        async function searchCandidates(searchParams) {
+            try {
+                const url = new URL('http://localhost:5000/api/candidates/search');
+                Object.keys(searchParams).forEach(key => {
+                    if (searchParams[key]) {
+                        url.searchParams.append(key, searchParams[key]);
+                    }
+                });
+                
+                console.log('🔍 Searching with URL:', url.toString());
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('📊 API Response:', data);
+                
+                return { success: response.ok, data: data };
+            } catch (error) {
+                console.error('❌ Search error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // Display results
+        function displayResults(result) {
+            const resultsDiv = document.getElementById('results');
+            const debugDiv = document.getElementById('debug');
+            const errorDiv = document.getElementById('error');
+            
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+            
+            if (result.success && result.data.success) {
+                const candidates = result.data.data || [];
+                const pagination = result.data.pagination || {};
+                
+                debugDiv.innerHTML = `
+                    <strong>Debug Info:</strong><br>
+                    Success: ${result.data.success}<br>
+                    Candidates found: ${candidates.length}<br>
+                    Total candidates: ${pagination.totalCandidates || 0}<br>
+                    Current page: ${pagination.currentPage || 1}<br>
+                    Total pages: ${pagination.totalPages || 1}<br>
+                    Timestamp: ${result.data.timestamp || 'N/A'}<br>
+                    Request ID: ${result.data.requestId || 'N/A'}
+                `;
+                debugDiv.style.display = 'block';
+                
+                if (candidates.length > 0) {
+                    resultsDiv.innerHTML = `
+                        <h3>Search Results (${candidates.length} candidates found)</h3>
+                        ${candidates.map(candidate => `
+                            <div class="candidate">
+                                <h4>${candidate.name || candidate.userId?.name || 'N/A'}</h4>
+                                <p><strong>Email:</strong> ${candidate.email || candidate.userId?.email || 'N/A'}</p>
+                                <p><strong>Phone:</strong> ${candidate.phone || candidate.userId?.phone || 'N/A'}</p>
+                                <p><strong>Location:</strong> ${candidate.location || 'N/A'}</p>
+                                <p><strong>Experience:</strong> ${candidate.experience ? candidate.experience + ' years' : 'N/A'}</p>
+                                <p><strong>Education:</strong> ${candidate.education || 'N/A'}</p>
+                                <p><strong>Current Employer:</strong> ${candidate.currentEmployer || 'N/A'}</p>
+                                <p><strong>Skills:</strong> ${candidate.skills ? candidate.skills.join(', ') : 'N/A'}</p>
+                            </div>
+                        `).join('')}
+                    `;
+                } else {
+                    resultsDiv.innerHTML = '<p>No candidates found matching your criteria.</p>';
+                }
+                
+                errorDiv.style.display = 'none';
+            } else {
+                const errorMessage = result.data?.message || result.error || 'Search failed';
+                errorDiv.textContent = `Error: ${errorMessage}`;
+                errorDiv.style.display = 'block';
+                resultsDiv.innerHTML = '';
+                debugDiv.style.display = 'none';
+            }
+        }
+        
+        // Handle form submission
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('debug').style.display = 'none';
+            
+            // Login if not already authenticated
+            if (!authToken) {
+                const loginSuccess = await login();
+                if (!loginSuccess) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').textContent = 'Authentication failed. Please check if the backend server is running.';
+                    document.getElementById('error').style.display = 'block';
+                    return;
+                }
+            }
+            
+            // Get form data
+            const searchParams = {
+                query: document.getElementById('query').value.trim(),
+                location: document.getElementById('location').value.trim(),
+                skills: document.getElementById('skills').value.trim(),
+                experience: document.getElementById('experience').value
+            };
+            
+            // Remove empty parameters
+            Object.keys(searchParams).forEach(key => {
+                if (!searchParams[key]) {
+                    delete searchParams[key];
+                }
+            });
+            
+            console.log('🔍 Search parameters:', searchParams);
+            
+            // Search candidates
+            const result = await searchCandidates(searchParams);
+            displayResults(result);
+        });
+        
+        // Auto-login on page load
+        window.addEventListener('load', async () => {
+            console.log('🚀 Page loaded, attempting auto-login...');
+            const loginSuccess = await login();
+            if (loginSuccess) {
+                console.log('✅ Ready to search candidates');
+            } else {
+                console.log('❌ Auto-login failed');
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+

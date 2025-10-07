@@ -4,6 +4,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/verifyToken');
+const { validateRegistration, validateLogin, sanitizeBody, handleValidationError } = require('../middleware/validation');
 const sendEmail = require('../utils/email');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
@@ -17,7 +18,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 // Ensure JSON parsing at router level (extra safety)
 router.use(express.json());
 
-router.post('/register', async (req, res) => {
+router.post('/register', sanitizeBody, validateRegistration, async (req, res) => {
   console.log("BODY RECEIVED:", req.body); // 👈 This should log your data
   const body = (req && typeof req.body === 'object' && req.body) ? req.body : {};
   const { name, email, password, role } = body;
@@ -73,7 +74,7 @@ router.get('/verify-email', async (req, res) => {
 
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', sanitizeBody, validateLogin, async (req, res) => {
   const body = (req && typeof req.body === 'object' && req.body) ? req.body : {};
   const { email, password } = body;
   try {
@@ -110,5 +111,8 @@ router.get('/me', authMiddleware, async (req, res) => {
   const me = await User.findById(req.user.id).select('-password');
   res.json({ user: me });
 });
+
+// Add error handling middleware
+router.use(handleValidationError);
 
 module.exports = router;

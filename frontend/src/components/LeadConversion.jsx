@@ -22,7 +22,7 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
       const response = await axios.get(`${API_BASE_URL}/jobs/active`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -44,7 +44,7 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
       await axios.put(`${API_BASE_URL}/crm/leads/${lead?._id}/collect-email`, 
         { email },
         { headers: { 'Authorization': `Bearer ${token}` } }
@@ -73,7 +73,7 @@ const LeadConversion = ({ lead, onConversion, onClose, open }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
       const response = await axios.post(`${API_BASE_URL}/crm/leads/${lead?._id}/convert-to-preuser`, 
         { 
           email,

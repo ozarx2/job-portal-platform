@@ -3,6 +3,8 @@ import apiService from '../services/apiService';
 
 const JobEditForm = ({ job, mode, onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -26,6 +28,33 @@ const JobEditForm = ({ job, mode, onSuccess, onCancel }) => {
       });
     }
   }, [job, mode]);
+
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      setLoadingCompanies(true);
+      try {
+        const response = await apiService.getUserCompanies();
+        console.log('🏢 Companies response:', response.data);
+        const companiesData = response.data.data || response.data; // Handle both formats
+        console.log('🏢 Companies data:', companiesData);
+        setCompanies(companiesData);
+        
+        // Set default company if none selected and companies available
+        if (formData.companyId === '' && companiesData.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            companyId: companiesData[0]._id
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -127,6 +156,32 @@ const JobEditForm = ({ job, mode, onSuccess, onCancel }) => {
                     <option value="Contract">Contract</option>
                     <option value="Internship">Internship</option>
                     <option value="Remote">Remote</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-800 mb-3 tracking-wide">
+                    Company *
+                  </label>
+                  <select
+                    name="companyId"
+                    value={formData.companyId}
+                    onChange={handleInputChange}
+                    disabled={loadingCompanies}
+                    className="w-full px-4 py-3 border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300 disabled:opacity-50"
+                    required
+                  >
+                    {loadingCompanies ? (
+                      <option value="">Loading companies...</option>
+                    ) : companies.length > 0 ? (
+                      companies.map(company => (
+                        <option key={company._id} value={company._id}>
+                          {company.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">No companies available</option>
+                    )}
                   </select>
                 </div>
 
@@ -243,5 +298,6 @@ const JobEditForm = ({ job, mode, onSuccess, onCancel }) => {
 };
 
 export default JobEditForm;
+
 
 

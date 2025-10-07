@@ -7,50 +7,104 @@ const AssistedHiringService = ({ job, onClose }) => {
   const [packages, setPackages] = useState({});
   const [selectedPackage, setSelectedPackage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingPackages, setLoadingPackages] = useState(true);
   const [step, setStep] = useState(1); // 1: Select package, 2: Payment, 3: Confirmation
   const [serviceRequest, setServiceRequest] = useState(null);
   const [paymentIntent, setPaymentIntent] = useState(null);
+  const [razorpayOrder, setRazorpayOrder] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('stripe'); // 'stripe' or 'razorpay'
   const [demoMode, setDemoMode] = useState(false);
+  const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'online', 'offline'
 
   useEffect(() => {
     fetchServicePackages();
   }, []);
 
   const fetchServicePackages = async () => {
+    setLoadingPackages(true);
+    setServerStatus('checking');
     try {
+      console.log('🔄 Fetching service packages...');
       const response = await apiService.getServicePackages();
+      console.log('📦 Service packages response:', response.data);
+      
       if (response.data.success) {
         setPackages(response.data.packages);
         setDemoMode(response.data.demoMode || false);
+        setServerStatus('online');
+        console.log('✅ Packages loaded successfully:', Object.keys(response.data.packages));
+      } else {
+        console.error('❌ Failed to load packages:', response.data);
+        setMessage('Failed to load service packages');
+        setMessageType('error');
+        setServerStatus('offline');
       }
     } catch (error) {
-      console.error('Error fetching service packages:', error);
-      setMessage('Failed to load service packages');
+      console.error('❌ Error fetching service packages:', error);
+      setServerStatus('offline');
+      
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        setMessage('Server is not responding. Please check if the backend server is running.');
+      } else {
+        setMessage('Failed to load service packages');
+      }
       setMessageType('error');
+    } finally {
+      setLoadingPackages(false);
     }
   };
 
   const handlePackageSelect = async () => {
+    console.log('🚀 handlePackageSelect called, selectedPackage:', selectedPackage);
+    console.log('🔍 Job object:', job);
+    console.log('🔍 Job ID:', job?._id);
+    
     if (!selectedPackage) {
+      console.log('❌ No package selected');
       setMessage('Please select a service package');
+      setMessageType('error');
+      return;
+    }
+
+    if (!job?._id) {
+      console.log('❌ No job ID available');
+      setMessage('Job information is missing');
       setMessageType('error');
       return;
     }
 
     setLoading(true);
     try {
+      console.log('🔄 Creating service request for job:', job._id, 'package:', selectedPackage);
       const response = await apiService.requestAssistedHiring(job._id, selectedPackage);
+      console.log('📦 Service request response:', response.data);
+      
       if (response.data.success) {
         setServiceRequest(response.data.data);
         setStep(2);
+        console.log('✅ Moving to step 2 (payment)');
       } else {
+        console.log('❌ Service request failed:', response.data.message);
         setMessage(response.data.message || 'Failed to create service request');
         setMessageType('error');
       }
     } catch (error) {
-      console.error('Error creating service request:', error);
-      setMessage(error.response?.data?.message || 'Failed to create service request');
-      setMessageType('error');
+      console.error('❌ Error creating service request:', error);
+      
+      // Handle different types of errors gracefully
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        setMessage('Server is not responding. Please check if the backend server is running.');
+        setMessageType('error');
+      } else if (error.response?.status === 0 || !error.response) {
+        setMessage('Cannot connect to server. Please ensure the backend server is running on port 5000.');
+        setMessageType('error');
+      } else if (error.response?.status === 400 && error.response?.data?.message?.includes('already have an active service request')) {
+        setMessage('You already have an active service request for this job. Please select a different job or wait for the current request to complete.');
+        setMessageType('warning');
+      } else {
+        setMessage(error.response?.data?.message || 'Failed to create service request');
+        setMessageType('error');
+      }
     } finally {
       setLoading(false);
     }
@@ -61,22 +115,58 @@ const AssistedHiringService = ({ job, onClose }) => {
 
     setLoading(true);
     try {
-      const response = await apiService.createPaymentIntent(serviceRequest._id);
-      if (response.data.success) {
-        setPaymentIntent(response.data);
-        setStep(3);
-      } else if (response.data.demoMode) {
-        // Demo mode - skip payment and go to confirmation
-        setPaymentIntent({ demoMode: true });
-        setStep(3);
+      if (paymentMethod === 'razorpay') {
+        // Handle Razorpay payment
+        const response = await apiService.createRazorpayOrder(serviceRequest._id);
+        if (response.data.success) {
+          setRazorpayOrder(response.data);
+          setStep(3);
+        } else if (response.data.demoMode) {
+          // Demo mode - skip payment and go to confirmation
+          setRazorpayOrder({ demoMode: true, amount: serviceRequest.price.amount, currency: serviceRequest.price.currency });
+          setStep(3);
+        } else {
+          setMessage(response.data.message || 'Failed to create Razorpay order');
+          setMessageType('error');
+        }
       } else {
-        setMessage(response.data.message || 'Failed to create payment intent');
-        setMessageType('error');
+        // Handle Stripe payment
+        const response = await apiService.createPaymentIntent(serviceRequest._id);
+        if (response.data.success) {
+          setPaymentIntent(response.data);
+          setStep(3);
+        } else if (response.data.demoMode) {
+          // Demo mode - skip payment and go to confirmation
+          setPaymentIntent({ demoMode: true });
+          setStep(3);
+        } else {
+          setMessage(response.data.message || 'Failed to create payment intent');
+          setMessageType('error');
+        }
       }
     } catch (error) {
-      console.error('Error creating payment intent:', error);
-      setMessage('Failed to initialize payment');
-      setMessageType('error');
+      console.error('Error creating payment:', error);
+      
+      // Handle different types of errors gracefully
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        setMessage('Server is not responding. Please check if the backend server is running.');
+        setMessageType('error');
+      } else if (error.response?.status === 0 || !error.response) {
+        setMessage('Cannot connect to server. Please ensure the backend server is running on port 5000.');
+        setMessageType('error');
+      } else if (error.response?.status === 503 && error.response?.data?.demoMode) {
+        // Demo mode - proceed with demo payment
+        console.log('🎭 Demo mode detected - proceeding with demo payment');
+        if (paymentMethod === 'razorpay') {
+          setRazorpayOrder({ demoMode: true, amount: serviceRequest.price.amount, currency: serviceRequest.price.currency });
+        } else {
+          setPaymentIntent({ demoMode: true });
+        }
+        setStep(3);
+      } else {
+        setMessage('Failed to initialize payment');
+        setMessageType('error');
+      }
     } finally {
       setLoading(false);
     }
@@ -100,6 +190,30 @@ const AssistedHiringService = ({ job, onClose }) => {
     } catch (error) {
       console.error('Error confirming payment:', error);
       setMessage('Payment confirmation failed');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRazorpayPaymentSuccess = async (paymentId, orderId, signature) => {
+    setLoading(true);
+    try {
+      const response = await apiService.verifyRazorpayPayment(serviceRequest._id, orderId, paymentId, signature);
+      if (response.data.success) {
+        const successMessage = response.data.demoMode 
+          ? 'Demo Razorpay payment successful! Your assisted hiring service has been activated. (Demo Mode)'
+          : 'Razorpay payment successful! Your assisted hiring service has been activated.';
+        setMessage(successMessage);
+        setMessageType('success');
+        onClose();
+      } else {
+        setMessage('Razorpay payment verification failed');
+        setMessageType('error');
+      }
+    } catch (error) {
+      console.error('Error verifying Razorpay payment:', error);
+      setMessage('Payment verification failed');
       setMessageType('error');
     } finally {
       setLoading(false);
@@ -137,6 +251,20 @@ const AssistedHiringService = ({ job, onClose }) => {
                 <p className="text-lg text-gray-600 mt-2">
                   Professional recruitment assistance for "{job.title}"
                 </p>
+                {/* Server Status Indicator */}
+                <div className="flex items-center space-x-2 mt-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    serverStatus === 'online' ? 'bg-green-500' : 
+                    serverStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className={`text-sm ${
+                    serverStatus === 'online' ? 'text-green-600' : 
+                    serverStatus === 'offline' ? 'text-red-600' : 'text-yellow-600'
+                  }`}>
+                    {serverStatus === 'online' ? 'Server Online' : 
+                     serverStatus === 'offline' ? 'Server Offline' : 'Checking Server...'}
+                  </span>
+                </div>
               </div>
               <button
                 onClick={onClose}
@@ -146,8 +274,32 @@ const AssistedHiringService = ({ job, onClose }) => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {Object.entries(packages).map(([packageType, packageData]) => (
+            {loadingPackages ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading service packages...</p>
+              </div>
+            ) : Object.keys(packages).length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📦</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Packages Available</h3>
+                <p className="text-gray-600 mb-4">
+                  {serverStatus === 'offline' 
+                    ? 'Server is offline. Please ensure the backend server is running.' 
+                    : 'Unable to load service packages. Please try again.'}
+                </p>
+                {serverStatus === 'offline' && (
+                  <button
+                    onClick={fetchServicePackages}
+                    className="bg-indigo-500 text-white px-6 py-2 rounded-lg hover:bg-indigo-600 transition-colors"
+                  >
+                    🔄 Retry Connection
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {Object.entries(packages).map(([packageType, packageData]) => (
                 <div
                   key={packageType}
                   className={`relative bg-white/80 backdrop-blur-sm border-2 rounded-2xl p-8 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ${
@@ -177,7 +329,10 @@ const AssistedHiringService = ({ job, onClose }) => {
                   </div>
 
                   <button
-                    onClick={() => setSelectedPackage(packageType)}
+                    onClick={() => {
+                      console.log('🎯 Package selected:', packageType);
+                      setSelectedPackage(packageType);
+                    }}
                     className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 ${
                       selectedPackage === packageType
                         ? 'bg-indigo-500 text-white shadow-lg'
@@ -209,7 +364,8 @@ const AssistedHiringService = ({ job, onClose }) => {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
             <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
               <button
@@ -248,13 +404,52 @@ const AssistedHiringService = ({ job, onClose }) => {
               {demoMode && (
                 <div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
                   <p className="text-yellow-800 font-semibold">
-                    🎭 Demo Mode: Stripe keys not configured
+                    🎭 Demo Mode: Payment keys not configured
                   </p>
                   <p className="text-yellow-700 text-sm mt-1">
                     This is a demonstration. No real payment will be processed.
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Payment Method Selection */}
+            <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose Payment Method</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => setPaymentMethod('stripe')}
+                  className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                    paymentMethod === 'stripe'
+                      ? 'border-indigo-500 bg-indigo-50'
+                      : 'border-gray-200 hover:border-indigo-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">💳</div>
+                    <div className="text-left">
+                      <div className="font-semibold text-gray-900">Stripe</div>
+                      <div className="text-sm text-gray-600">International payments</div>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('razorpay')}
+                  className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                    paymentMethod === 'razorpay'
+                      ? 'border-indigo-500 bg-indigo-50'
+                      : 'border-gray-200 hover:border-indigo-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">🏦</div>
+                    <div className="text-left">
+                      <div className="font-semibold text-gray-900">Razorpay</div>
+                      <div className="text-sm text-gray-600">Indian payments</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-8 mb-6">
@@ -312,7 +507,7 @@ const AssistedHiringService = ({ job, onClose }) => {
                 disabled={loading}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
               >
-                {loading ? 'Processing...' : 'Proceed to Payment'}
+                {loading ? 'Processing...' : `Proceed with ${paymentMethod === 'razorpay' ? 'Razorpay' : 'Stripe'} Payment`}
               </button>
             </div>
           </div>
@@ -321,7 +516,7 @@ const AssistedHiringService = ({ job, onClose }) => {
     );
   }
 
-  if (step === 3 && paymentIntent) {
+  if (step === 3 && (paymentIntent || razorpayOrder)) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-2xl border border-white/20">
@@ -329,15 +524,15 @@ const AssistedHiringService = ({ job, onClose }) => {
             <div className="mb-6">
               <div className="text-6xl mb-4">💳</div>
               <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-                {paymentIntent.demoMode ? 'Demo Payment' : 'Secure Payment'}
+                {(paymentIntent?.demoMode || razorpayOrder?.demoMode) ? 'Demo Payment' : 'Secure Payment'}
               </h2>
               <p className="text-lg text-gray-600 mt-2">
-                {paymentIntent.demoMode 
+                {(paymentIntent?.demoMode || razorpayOrder?.demoMode)
                   ? 'Complete your demo payment (No real money will be charged)'
-                  : 'Complete your payment using Stripe'
+                  : `Complete your payment using ${paymentMethod === 'razorpay' ? 'Razorpay' : 'Stripe'}`
                 }
               </p>
-              {paymentIntent.demoMode && (
+              {(paymentIntent?.demoMode || razorpayOrder?.demoMode) && (
                 <div className="mt-4 p-4 bg-blue-100 border border-blue-300 rounded-lg">
                   <p className="text-blue-800 font-semibold">
                     🎭 Demo Mode Active
@@ -351,7 +546,9 @@ const AssistedHiringService = ({ job, onClose }) => {
 
             <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-6 mb-6">
               <div className="text-2xl font-bold text-gray-900 mb-2">
-                {paymentIntent.currency === 'INR' ? '₹' : '$'}{paymentIntent.amount} {paymentIntent.currency.toUpperCase()}
+                {(paymentIntent?.currency || razorpayOrder?.currency || serviceRequest?.price?.currency) === 'INR' ? '₹' : '$'}
+                {paymentIntent?.amount || razorpayOrder?.amount || serviceRequest?.price?.amount} 
+                {(paymentIntent?.currency || razorpayOrder?.currency || serviceRequest?.price?.currency || 'USD').toUpperCase()}
               </div>
               <div className="text-gray-600">
                 {packages[selectedPackage]?.name} for "{job.title}"
@@ -359,12 +556,12 @@ const AssistedHiringService = ({ job, onClose }) => {
             </div>
 
             <div className="mb-6">
-              <div id="stripe-payment-element" className="mb-4">
-                {/* Stripe Payment Element will be mounted here */}
+              <div id="payment-element" className="mb-4">
+                {/* Payment Element will be mounted here */}
                 <div className="bg-gray-100 rounded-lg p-8 text-gray-500">
                   <div className="text-lg mb-2">🔒 Secure Payment</div>
                   <div className="text-sm">
-                    Stripe payment integration would be loaded here in production
+                    {paymentMethod === 'razorpay' ? 'Razorpay' : 'Stripe'} payment integration would be loaded here in production
                   </div>
                   <div className="text-xs mt-2">
                     For demo purposes, payment will be simulated
@@ -381,18 +578,24 @@ const AssistedHiringService = ({ job, onClose }) => {
                 Back
               </button>
               <button
-                onClick={() => handlePaymentSuccess('pi_demo_payment_intent_id')}
+                onClick={() => {
+                  if (paymentMethod === 'razorpay') {
+                    handleRazorpayPaymentSuccess('razorpay_demo_payment_id', razorpayOrder?.orderId || 'demo_order_id', 'demo_signature');
+                  } else {
+                    handlePaymentSuccess('pi_demo_payment_intent_id');
+                  }
+                }}
                 disabled={loading}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
               >
-                {loading ? 'Processing Payment...' : (paymentIntent.demoMode ? 'Complete Demo Payment' : 'Complete Payment')}
+                {loading ? 'Processing Payment...' : ((paymentIntent?.demoMode || razorpayOrder?.demoMode) ? 'Complete Demo Payment' : 'Complete Payment')}
               </button>
             </div>
 
             <div className="mt-6 text-xs text-gray-500">
               <div className="flex items-center justify-center space-x-4">
                 <span>🔒 SSL Secured</span>
-                <span>💳 Stripe Powered</span>
+                <span>{paymentMethod === 'razorpay' ? '🏦 Razorpay Powered' : '💳 Stripe Powered'}</span>
                 <span>🛡️ PCI Compliant</span>
               </div>
             </div>

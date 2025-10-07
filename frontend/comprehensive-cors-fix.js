@@ -18,7 +18,7 @@ const corsOptions = {
         'http://localhost:3001',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
-        'https://api.ozarx.in',
+        'http://localhost:5000',
         // Add your Vercel deployment URLs here
         'https://job-portal-platform.vercel.app',
         'https://ozarx-frontend.vercel.app'

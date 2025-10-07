@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     cors: {
-      origin: ['http://localhost:5173', 'https://api.ozarx.in'],
+      origin: ['http://localhost:5173', 'http://localhost:5000'],
       credentials: true,
     },
     watch: {

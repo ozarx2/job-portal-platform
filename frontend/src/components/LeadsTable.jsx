@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ImportLeads from "./ImportLeads";
-import CompanyDebugger from "./CompanyDebugger";
+// CompanyDebugger removed from production UI
 import LeadConversion from "./LeadConversion";
 import LeadEditModal from "./LeadEditModal";
 import { formatJobId } from "../utils/jobIdGenerator";
@@ -31,7 +31,7 @@ export default function LeadsTable() {
       }
 
       const res = await axios.get(
-        `https://api.ozarx.in/api/crm/leads?page=${page}&limit=${limit}`,
+        `http://localhost:5000/api/crm/leads?page=${page}&limit=${limit}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -58,7 +58,7 @@ export default function LeadsTable() {
       console.log('Fetching jobs...');
 
       // Fetch jobs
-      const jobsRes = await axios.get('https://api.ozarx.in/api/jobs', {
+      const jobsRes = await axios.get('http://localhost:5000/api/jobs', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('Jobs response:', jobsRes.data);
@@ -84,7 +84,7 @@ export default function LeadsTable() {
         return;
       }
 
-      await axios.delete(`https://api.ozarx.in/api/crm/leads/${id}`, {
+      await axios.delete(`http://localhost:5000/api/crm/leads/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -132,7 +132,7 @@ export default function LeadsTable() {
       console.log('Job Title:', editingLead.jobTitle);
 
       const response = await axios.put(
-        `https://api.ozarx.in/api/crm/leads/${editingLead?._id}`,
+        `http://localhost:5000/api/crm/leads/${editingLead?._id}`,
         leadData,
         {
           headers: {
@@ -231,7 +231,7 @@ export default function LeadsTable() {
       }
 
       await axios.put(
-        `https://api.ozarx.in/api/crm/leads/${leadId}`,
+        `http://localhost:5000/api/crm/leads/${leadId}`,
         { status: newStatus },
         {
           headers: {
@@ -303,7 +303,7 @@ export default function LeadsTable() {
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
       
       const response = await axios.put(
         `${API_BASE_URL}/crm/leads/${editingLead._id}`,

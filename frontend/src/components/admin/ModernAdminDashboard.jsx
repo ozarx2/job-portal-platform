@@ -3,11 +3,14 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import DashboardOverview from './DashboardOverview';
 import UserManagement from './UserManagement';
+import DocumentManager from './DocumentManager';
 import DocumentViewer from './DocumentViewer';
 import JobManagement from './JobManagement';
 import ApplicationManagement from './ApplicationManagement';
 import CompanyManagement from './CompanyManagement';
-import CronManagementTest from './CronManagementTest';
+import NewsletterManagement from './NewsletterManagement';
+// CronManagementTest removed from production UI
+import ReportsDashboard from './ReportsDashboard';
 
 const ModernAdminDashboard = () => {
   const [adminName, setAdminName] = useState('Admin');
@@ -31,7 +34,7 @@ const ModernAdminDashboard = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       const response = await axios.get(`${API_BASE_URL}/admin/dashboard-stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -138,6 +141,12 @@ const ModernAdminDashboard = () => {
                 <span className="text-sm font-medium text-gray-700">{adminName.charAt(0)}</span>
               </div>
               <span className="text-sm font-medium text-gray-700">{adminName}</span>
+              <button
+                onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }}
+                className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
@@ -232,6 +241,34 @@ const ModernAdminDashboard = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <span>Companies</span>
+              </button>
+              
+              <button 
+                onClick={() => setActiveTab('reports')} 
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'reports' 
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                    : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Reports & Analytics</span>
+              </button>
+
+              <button 
+                onClick={() => setActiveTab('newsletter')} 
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'newsletter' 
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                    : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span>Newsletter</span>
               </button>
               
               <button 
@@ -331,13 +368,15 @@ const ModernAdminDashboard = () => {
 
           {/* Content Area */}
           <div className="space-y-6">
-            {activeTab === 'overview' && <DashboardOverview />}
+            {activeTab === 'overview' && <DashboardOverview onNavigateToReports={() => setActiveTab('reports')} />}
             {activeTab === 'users' && <UserManagement token={localStorage.getItem('token')} />}
-            {activeTab === 'documents' && <DocumentViewer />}
+            {activeTab === 'documents' && <DocumentManager />}
             {activeTab === 'jobs' && <JobManagement />}
             {activeTab === 'applications' && <ApplicationManagement />}
             {activeTab === 'companies' && <CompanyManagement />}
-            {activeTab === 'cron' && <CronManagementTest />}
+            {activeTab === 'reports' && <ReportsDashboard />}
+            {activeTab === 'newsletter' && <NewsletterManagement />}
+            {/* Cron test tab removed */}
           </div>
         </div>
       </div>

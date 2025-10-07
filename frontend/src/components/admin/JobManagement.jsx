@@ -28,12 +28,17 @@ const JobManagement = () => {
   const fetchCompanies = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://api.ozarx.in/api/companies', {
+      const response = await axios.get('http://localhost:5000/api/companies', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.data.success) {
+      // Handle direct array response from backend
+      if (Array.isArray(response.data)) {
+        setCompanies(response.data);
+      } else if (response.data.success) {
         setCompanies(response.data.data || []);
+      } else {
+        setCompanies([]);
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -44,12 +49,18 @@ const JobManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://api.ozarx.in/api/jobs', {
+      const response = await axios.get('http://localhost:5000/api/jobs', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.data.success) {
+      // Handle direct array response from backend
+      if (Array.isArray(response.data)) {
+        setJobs(response.data);
+      } else if (response.data.success) {
+        // Handle wrapped response format (if backend changes in future)
         setJobs(response.data.data || []);
+      } else {
+        setJobs([]);
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -78,31 +89,27 @@ const JobManagement = () => {
       
       if (editingJob) {
         // Update existing job
-        const response = await axios.put(`https://api.ozarx.in/api/jobs/${editingJob._id}`, formData, {
+        const response = await axios.put(`http://localhost:5000/api/jobs/${editingJob._id}`, formData, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        if (response.data.success) {
-          setMessage('Job updated successfully!');
-          setMessageType('success');
-          setEditingJob(null);
-          setShowForm(false);
-          resetForm();
-          fetchJobs();
-        }
+        setMessage('Job updated successfully!');
+        setMessageType('success');
+        setEditingJob(null);
+        setShowForm(false);
+        resetForm();
+        fetchJobs();
       } else {
         // Create new job
-        const response = await axios.post('https://api.ozarx.in/api/jobs', formData, {
+        const response = await axios.post('http://localhost:5000/api/jobs', formData, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        if (response.data.success) {
-          setMessage('Job created successfully!');
-          setMessageType('success');
-          setShowForm(false);
-          resetForm();
-          fetchJobs();
-        }
+        setMessage('Job created successfully!');
+        setMessageType('success');
+        setShowForm(false);
+        resetForm();
+        fetchJobs();
       }
     } catch (error) {
       console.error('Error saving job:', error);
@@ -133,15 +140,13 @@ const JobManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`https://api.ozarx.in/api/jobs/${jobId}`, {
+      const response = await axios.delete(`http://localhost:5000/api/jobs/${jobId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      if (response.data.success) {
-        setMessage('Job deleted successfully!');
-        setMessageType('success');
-        fetchJobs();
-      }
+      setMessage('Job deleted successfully!');
+      setMessageType('success');
+      fetchJobs();
     } catch (error) {
       console.error('Error deleting job:', error);
       setMessage('Failed to delete job');
@@ -237,7 +242,7 @@ const JobManagement = () => {
                   <option value="">Select a company</option>
                   {companies.map((company) => (
                     <option key={company._id} value={company._id}>
-                      {company.name} ({company.companyId})
+                      {company.name} ({company._id.substring(0, 8)})
                     </option>
                   ))}
                 </select>

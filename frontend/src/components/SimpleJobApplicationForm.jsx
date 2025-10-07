@@ -17,6 +17,7 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
 
   useEffect(() => {
     // Get token from localStorage
@@ -35,7 +36,7 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       console.log('Fetching user profile from:', `${API_BASE_URL}/auth/me`);
       
       const response = await axios.get(`${API_BASE_URL}/auth/me`, {
@@ -145,7 +146,7 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
     
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       
       // Prepare form data for submission
       const submitData = new FormData();
@@ -161,6 +162,7 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
       submitData.append('notes', formData.coverLetter.trim());
       
       // Add missing fields that backend expects
+      submitData.append('age', formData.age || '');
       submitData.append('currentEmployer', '');
       submitData.append('expectedSalary', '');
       submitData.append('availability', '');
@@ -192,11 +194,16 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
       if (error.response?.status === 400) {
         if (error.response.data.requiresProfileCompletion) {
           setMessage('Please complete your profile before applying to jobs.');
+        } else if (error.response.data.msg === "Already applied to this job" || 
+                   error.response.data.message === "Already applied to this job") {
+          setMessage('You have already applied to this job. Please check your applications or try a different job.');
+          setAlreadyApplied(true);
         } else {
-          setMessage(error.response.data.message || 'Invalid application data. Please check your information.');
+          setMessage(error.response.data.message || error.response.data.msg || 'Invalid application data. Please check your information.');
         }
       } else if (error.response?.status === 409) {
-        setMessage('You have already applied to this job.');
+        setMessage('You have already applied to this job. Please check your applications or try a different job.');
+        setAlreadyApplied(true);
       } else if (error.response?.status === 404) {
         setMessage('Job not found. Please try again.');
       } else if (error.response?.status === 401) {
@@ -243,7 +250,27 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {alreadyApplied ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Already Applied</h3>
+              <p className="text-gray-600 mb-4">
+                You have already submitted an application for this job. 
+                Please check your applications tab to see the status.
+              </p>
+              <button
+                onClick={onClose}
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
             {/* Personal Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -330,11 +357,20 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
                   }`}
                 >
                   <option value="">Select experience</option>
-                  <option value="0-1">0-1 years</option>
-                  <option value="2-3">2-3 years</option>
-                  <option value="4-5">4-5 years</option>
-                  <option value="6-10">6-10 years</option>
-                  <option value="10+">10+ years</option>
+                  <option value="0">0 years (Fresh Graduate)</option>
+                  <option value="1">1 year</option>
+                  <option value="2">2 years</option>
+                  <option value="3">3 years</option>
+                  <option value="4">4 years</option>
+                  <option value="5">5 years</option>
+                  <option value="6">6 years</option>
+                  <option value="7">7 years</option>
+                  <option value="8">8 years</option>
+                  <option value="9">9 years</option>
+                  <option value="10">10 years</option>
+                  <option value="15">15 years</option>
+                  <option value="20">20 years</option>
+                  <option value="25">25+ years</option>
                 </select>
                 {errors.experience && <p className="text-red-500 text-xs mt-1">{errors.experience}</p>}
               </div>
@@ -428,6 +464,7 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>
