@@ -70,6 +70,7 @@ const GoogleAuth = ({ role = 'candidate', onSuccess, onError }) => {
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
+      script.crossOrigin = 'anonymous';
       
       script.onload = () => {
         setIsScriptLoaded(true);
@@ -105,7 +106,8 @@ const GoogleAuth = ({ role = 'candidate', onSuccess, onError }) => {
           client_id: clientId,
           callback: handleCredentialResponse,
           auto_select: false,
-          cancel_on_tap_outside: true
+          cancel_on_tap_outside: true,
+          use_fedcm_for_prompt: false
         });
 
         // Render the Google sign-in button
