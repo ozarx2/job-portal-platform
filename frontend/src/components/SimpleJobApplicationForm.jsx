@@ -36,7 +36,7 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       console.log('Fetching user profile from:', `${API_BASE_URL}/auth/me`);
       
       const response = await axios.get(`${API_BASE_URL}/auth/me`, {
@@ -146,7 +146,7 @@ const SimpleJobApplicationForm = ({ jobId, jobTitle, companyName, onClose, onSuc
     
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       
       // Prepare form data for submission
       const submitData = new FormData();

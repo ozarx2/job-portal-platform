@@ -186,7 +186,7 @@ export default function Signup() {
     
     try {
       await submitForm(async (sanitizedData) => {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
         const res = await axios.post(`${API_BASE_URL}/auth/register`, sanitizedData);
         
         showSuccess('Registration successful! Redirecting to your dashboard...');

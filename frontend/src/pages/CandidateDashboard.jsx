@@ -171,7 +171,7 @@ export default function CandidateDashboard() {
     if (typeof imageFile === 'string') {
       // If it's a relative URL, make it absolute
       if (imageFile.startsWith('/uploads/')) {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com';
         return `${API_BASE_URL}${imageFile}`;
       }
       return imageFile;
@@ -202,7 +202,7 @@ export default function CandidateDashboard() {
     setLoading(prev => ({ ...prev, jobs: true }));
     try {
       console.log('🔄 Fetching jobs for candidate...');
-      const res = await axios.get(`http://localhost:5000/api/jobs?t=${Date.now()}`, {
+      const res = await axios.get(`http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api/jobs?t=${Date.now()}`, {
         timeout: 30000 // 30 second timeout for heavy operations
       });
       console.log('📦 Jobs API response:', res.data);
@@ -237,7 +237,7 @@ export default function CandidateDashboard() {
   const fetchApplications = async () => {
     setLoading(prev => ({ ...prev, applications: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       const res = await axios.get(`${API_BASE_URL}/applications/me?t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -265,7 +265,7 @@ export default function CandidateDashboard() {
   const fetchProfile = async () => {
     setLoading(prev => ({ ...prev, profile: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       const res = await axios.get(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -284,7 +284,7 @@ export default function CandidateDashboard() {
   const fetchSelectedJobs = async () => {
     setLoading(prev => ({ ...prev, selectedJobs: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       const res = await axios.get(`${API_BASE_URL}/applications/selected?t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -301,7 +301,7 @@ export default function CandidateDashboard() {
   const fetchProfileStatus = async () => {
     setLoading(prev => ({ ...prev, profileStatus: true }));
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       console.log('Fetching profile status from:', `${API_BASE_URL}/applications/profile-status`);
       const res = await axios.get(`${API_BASE_URL}/applications/profile-status?t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -379,7 +379,7 @@ export default function CandidateDashboard() {
       if (profile.github) formData.append('github', profile.github.trim());
       // Note: Profile image is handled separately by ProfileImageUpload component
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       await axios.put(`${API_BASE_URL}/users/profile?t=${Date.now()}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -433,7 +433,7 @@ export default function CandidateDashboard() {
       const formData = new FormData();
       formData.append('resume', resumeFile);
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       await axios.post(`${API_BASE_URL}/users/resume`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -585,7 +585,7 @@ export default function CandidateDashboard() {
         }
       });
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       await axios.post(`${API_BASE_URL}/users/onboarding/submit`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,

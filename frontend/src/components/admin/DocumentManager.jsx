@@ -36,7 +36,7 @@ const DocumentManager = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       const response = await axios.get(`${API_BASE_URL}/documents`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -81,7 +81,7 @@ const DocumentManager = () => {
       formData.append('description', uploadData.description);
       formData.append('tags', uploadData.tags);
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       const response = await axios.post(`${API_BASE_URL}/documents/upload`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -113,7 +113,7 @@ const DocumentManager = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       const response = await axios.delete(`${API_BASE_URL}/documents/${documentId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -133,7 +133,7 @@ const DocumentManager = () => {
   const handleDownload = async (document) => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
       const response = await axios.get(`${API_BASE_URL}/documents/${document._id}/download`, {
         headers: { 'Authorization': `Bearer ${token}` },
         responseType: 'blob'

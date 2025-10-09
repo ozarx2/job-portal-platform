@@ -31,7 +31,7 @@ export default function LeadsTable() {
       }
 
       const res = await axios.get(
-        `http://localhost:5000/api/crm/leads?page=${page}&limit=${limit}`,
+        `http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api/crm/leads?page=${page}&limit=${limit}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -58,7 +58,7 @@ export default function LeadsTable() {
       console.log('Fetching jobs...');
 
       // Fetch jobs
-      const jobsRes = await axios.get('http://localhost:5000/api/jobs', {
+      const jobsRes = await axios.get('http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api/jobs', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('Jobs response:', jobsRes.data);
@@ -84,7 +84,7 @@ export default function LeadsTable() {
         return;
       }
 
-      await axios.delete(`http://localhost:5000/api/crm/leads/${id}`, {
+      await axios.delete(`http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api/crm/leads/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -132,7 +132,7 @@ export default function LeadsTable() {
       console.log('Job Title:', editingLead.jobTitle);
 
       const response = await axios.put(
-        `http://localhost:5000/api/crm/leads/${editingLead?._id}`,
+        `http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api/crm/leads/${editingLead?._id}`,
         leadData,
         {
           headers: {
@@ -231,7 +231,7 @@ export default function LeadsTable() {
       }
 
       await axios.put(
-        `http://localhost:5000/api/crm/leads/${leadId}`,
+        `http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api/crm/leads/${leadId}`,
         { status: newStatus },
         {
           headers: {
@@ -303,7 +303,7 @@ export default function LeadsTable() {
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api";
       
       const response = await axios.put(
         `${API_BASE_URL}/crm/leads/${editingLead._id}`,

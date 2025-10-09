@@ -1023,7 +1023,7 @@ export default function EmployerDashboard() {
                         <div className="flex-shrink-0">
                           {company.logo ? (
                             <img
-                              src={`http://localhost:5000${company.logo}`}
+                              src={`http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com${company.logo}`}
                               alt={company.name}
                               className="w-16 h-16 rounded-2xl object-cover border-2 border-white/50 shadow-lg"
                             />
