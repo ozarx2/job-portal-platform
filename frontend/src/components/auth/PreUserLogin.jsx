@@ -26,7 +26,7 @@ const PreUserLogin = () => {
   const handleTokenLogin = async (token) => {
     try {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
       const response = await axios.post(`${API_BASE_URL}/auth/preuser-login`, {
         activationToken: token
       });
@@ -60,7 +60,7 @@ const PreUserLogin = () => {
     setError('');
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.ozarx.in/api";
       const response = await axios.post(`${API_BASE_URL}/auth/preuser-login`, {
         email: formData.email,
         password: formData.password

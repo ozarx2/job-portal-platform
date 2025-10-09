@@ -19,7 +19,7 @@ const NewsletterManagement = () => {
   const fetchSubscriberCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
       const response = await axios.get(`${API_BASE_URL}/email/newsletter/subscribers`, {
         headers: {
@@ -50,7 +50,7 @@ const NewsletterManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
       const response = await axios.post(`${API_BASE_URL}/email/newsletter/send`, formData, {
         headers: {
@@ -80,7 +80,7 @@ const NewsletterManagement = () => {
   const testEmail = async (type) => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
       const response = await axios.post(`${API_BASE_URL}/email/test`, {
         email: 'test@example.com',

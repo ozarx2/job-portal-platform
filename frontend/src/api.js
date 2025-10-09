@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api', // Production API
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api', // Production API
   withCredentials: true, // keep if you’re using cookies/sessions
   headers: {
     'Content-Type': 'application/json'

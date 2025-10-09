@@ -35,7 +35,7 @@ const JobListing = ({ searchResults = null }) => {
         limit: jobsPerPage
       });
 
-      const response = await axios.get(`http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api/jobs?${params}`);
+      const response = await axios.get(`https://api.ozarx.in/api/jobs?${params}`);
       
       // Handle direct array response from backend
       if (Array.isArray(response.data)) {
@@ -250,7 +250,7 @@ const JobListing = ({ searchResults = null }) => {
                     <div className="flex-shrink-0">
                       {job.companyId?.logo ? (
                         <img
-                          src={`http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com${job.companyId.logo}`}
+                          src={`https://api.ozarx.in${job.companyId.logo}`}
                           alt={job.companyId?.name || job.company}
                           className="w-12 h-12 rounded-lg object-cover border border-gray-200"
                         />
