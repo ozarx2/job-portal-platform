@@ -22,16 +22,30 @@ app.use((req, res, next) => {
   next();
 });
 
+// ------------------- CORS Duplicate Prevention -------------------
+app.use((req, res, next) => {
+  // Prevent duplicate CORS headers by removing them if they exist
+  res.removeHeader('Access-Control-Allow-Origin');
+  res.removeHeader('Access-Control-Allow-Credentials');
+  res.removeHeader('Access-Control-Allow-Methods');
+  res.removeHeader('Access-Control-Allow-Headers');
+  next();
+});
+
 // ------------------- CORS Configuration -------------------
-const allowedOrigins = [
-  'https://ozarx.in',
-  'https://www.ozarx.in',
-  'https://job-portal-platform-git-master-shamseers-projects-613ceea2.vercel.app',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:5173',
-  'http://127.0.0.1:5173'
-];
+// Get allowed origins from environment variable or use defaults
+const corsOrigins = process.env.CORS_ORIGINS 
+  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+  : [
+      'https://ozarx.in',
+      'https://www.ozarx.in',
+      'https://job-portal-platform-git-master-shamseers-projects-613ceea2.vercel.app',
+      'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com:3000',
+      'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com:5173'
+    ];
+
+// Remove duplicates from origins array
+const allowedOrigins = [...new Set(corsOrigins)];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -47,7 +61,8 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }));
 
 // ------------------- Body Parser -------------------
@@ -201,6 +216,8 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 CORS enabled for: ${allowedOrigins.join(', ')}`);
+  console.log(`🔧 CORS Origins from env: ${process.env.CORS_ORIGINS || 'Using defaults'}`);
+  console.log(`🔧 Duplicates removed: ${corsOrigins.length} -> ${allowedOrigins.length} origins`);
   console.log(`📋 Available endpoints:`);
   console.log(`   - POST /api/crm/leads/import (CRM leads import)`);
   console.log(`   - GET /api/crm/leads (Get leads)`);
