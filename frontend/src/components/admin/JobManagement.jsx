@@ -28,7 +28,7 @@ const JobManagement = () => {
   const fetchCompanies = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/companies', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/companies`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -49,7 +49,7 @@ const JobManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/jobs', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/jobs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -89,7 +89,7 @@ const JobManagement = () => {
       
       if (editingJob) {
         // Update existing job
-        const response = await axios.put(`http://localhost:5000/api/jobs/${editingJob._id}`, formData, {
+        const response = await axios.put(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/jobs/${editingJob._id}`, formData, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -101,7 +101,7 @@ const JobManagement = () => {
         fetchJobs();
       } else {
         // Create new job
-        const response = await axios.post('http://localhost:5000/api/jobs', formData, {
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/jobs`, formData, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -140,7 +140,7 @@ const JobManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/jobs/${jobId}`, {
+      const response = await axios.delete(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/jobs/${jobId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

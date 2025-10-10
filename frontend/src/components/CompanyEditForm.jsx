@@ -46,7 +46,7 @@ export default function CompanyEditForm({ company, onSuccess, onCancel, mode = '
       });
       
       if (company.logo) {
-        setLogoPreview(`http://localhost:5000${company.logo}`);
+        setLogoPreview(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in'}${company.logo}`);
       }
     }
   }, [company, mode]);

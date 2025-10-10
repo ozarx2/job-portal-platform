@@ -50,7 +50,7 @@ const IndividualDocumentUpload = ({ userId }) => {
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       const response = await axios.get(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -88,7 +88,7 @@ const IndividualDocumentUpload = ({ userId }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       const response = await axios.get(`${API_BASE_URL}/onboarding/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -181,7 +181,7 @@ const IndividualDocumentUpload = ({ userId }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
 
       const formData = new FormData();
       formData.append(fieldName, file);
@@ -273,7 +273,7 @@ const IndividualDocumentUpload = ({ userId }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
 
       const submitData = new FormData();
       

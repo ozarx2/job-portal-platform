@@ -41,7 +41,7 @@ const CompanyProfile = () => {
     try {
       const token = localStorage.getItem('token');
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const response = await axios.get(`http://localhost:5000/api/companies/user/${user.id}`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/companies/user/${user.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -109,7 +109,7 @@ const CompanyProfile = () => {
       
       if (editingCompany) {
         // Update existing company
-        const response = await axios.put(`http://localhost:5000/api/companies/${editingCompany._id}`, formDataToSend, {
+        const response = await axios.put(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/companies/${editingCompany._id}`, formDataToSend, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -126,7 +126,7 @@ const CompanyProfile = () => {
         }
       } else {
         // Create new company
-        const response = await axios.post('http://localhost:5000/api/companies', formDataToSend, {
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/companies`, formDataToSend, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -173,7 +173,7 @@ const CompanyProfile = () => {
         facebook: company.socialMedia?.facebook || ''
       }
     });
-    setLogoPreview(company.logo ? `http://localhost:5000${company.logo}` : null);
+    setLogoPreview(company.logo ? `${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in'}${company.logo}` : null);
     setShowForm(true);
   };
 
@@ -502,7 +502,7 @@ const CompanyProfile = () => {
                 <div className="flex items-center space-x-4 mb-4">
                   {company.logo ? (
                     <img 
-                      src={`http://localhost:5000${company.logo}`} 
+                      src={`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in'}${company.logo}`} 
                       alt={company.name}
                       className="h-16 w-16 rounded-full object-cover"
                     />
@@ -550,6 +550,8 @@ const CompanyProfile = () => {
 };
 
 export default CompanyProfile;
+
+
 
 
 

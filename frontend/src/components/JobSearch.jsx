@@ -77,7 +77,7 @@ const JobSearch = ({ onSearchResults, onSearchChange }) => {
         limit: 20
       });
 
-      const response = await axios.get(`http://localhost:5000/api/jobs?${params}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/jobs?${params}`);
       
       // Handle direct array response from backend
       if (Array.isArray(response.data)) {

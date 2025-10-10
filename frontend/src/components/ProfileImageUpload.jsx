@@ -33,7 +33,7 @@ const ProfileImageUpload = ({ currentImage, onImageUpdate, onError }) => {
     if (typeof imageFile === 'string') {
       // If it's a relative URL, make it absolute
       if (imageFile.startsWith('/uploads/')) {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in';
         return `${API_BASE_URL}${imageFile}`;
       }
       return imageFile;
@@ -134,7 +134,7 @@ const ProfileImageUpload = ({ currentImage, onImageUpdate, onError }) => {
       const formData = new FormData();
       formData.append('profileImage', image);
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       const response = await axios.post(`${API_BASE_URL}/users/profile-image`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,

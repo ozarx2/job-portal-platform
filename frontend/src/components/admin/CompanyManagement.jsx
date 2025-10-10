@@ -43,7 +43,7 @@ const CompanyManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/companies', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/companies`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -117,7 +117,7 @@ const CompanyManagement = () => {
       
       if (editingCompany) {
         // Update existing company
-        const response = await axios.put(`http://localhost:5000/api/companies/${editingCompany._id}`, formDataToSend, {
+        const response = await axios.put(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/companies/${editingCompany._id}`, formDataToSend, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -132,7 +132,7 @@ const CompanyManagement = () => {
         fetchCompanies();
       } else {
         // Create new company
-        const response = await axios.post('http://localhost:5000/api/companies', formDataToSend, {
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/companies`, formDataToSend, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -178,7 +178,7 @@ const CompanyManagement = () => {
       },
       isActive: company.isActive !== false
     });
-    setLogoPreview(company.logo ? `http://localhost:5000${company.logo}` : null);
+    setLogoPreview(company.logo ? `${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in'}${company.logo}` : null);
     setShowForm(true);
   };
 
@@ -187,7 +187,7 @@ const CompanyManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/companies/${companyId}`, {
+      const response = await axios.delete(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/companies/${companyId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -561,7 +561,7 @@ const CompanyManagement = () => {
                       <div className="flex items-center">
                         {company.logo ? (
                           <img 
-                            src={`http://localhost:5000${company.logo}`} 
+                            src={`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in'}${company.logo}`} 
                             alt={company.name}
                             className="h-10 w-10 rounded-full object-cover mr-3"
                           />
@@ -643,7 +643,7 @@ const CompanyManagement = () => {
                 <div className="flex items-center space-x-4">
                   {selectedCompany.logo ? (
                     <img 
-                      src={`http://localhost:5000${selectedCompany.logo}`} 
+                      src={`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in'}${selectedCompany.logo}`} 
                       alt={selectedCompany.name}
                       className="h-20 w-20 rounded-full object-cover"
                     />

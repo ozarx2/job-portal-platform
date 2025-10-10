@@ -50,7 +50,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
         ...(roleFilter && { role: roleFilter })
       };
 
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/admin/users`, {
         headers,
         params
       });
@@ -81,7 +81,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.post('http://localhost:5000/api/admin/users', newUser, { headers });
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/admin/users`, newUser, { headers });
       
       setSuccess('User created successfully');
       setShowCreateModal(false);
@@ -103,7 +103,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.put(`http://localhost:5000/api/admin/users/${editingUser._id}`, editUser, { headers });
+      const response = await axios.put(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/admin/users/${editingUser._id}`, editUser, { headers });
       
       if (response.data.success) {
         setSuccess('User updated successfully');
@@ -128,7 +128,7 @@ const UserManagement = ({ token, onUserUpdate }) => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, { headers });
+      const response = await axios.delete(`${import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api'}/admin/users/${userId}`, { headers });
       
       if (response.data.success) {
         setSuccess('User deleted successfully');

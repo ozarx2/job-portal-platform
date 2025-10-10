@@ -35,7 +35,7 @@ const AdvancedAnalytics = () => {
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('conversion');
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
 
   useEffect(() => {
     fetchAdvancedAnalytics();
@@ -359,3 +359,4 @@ const AdvancedAnalytics = () => {
 };
 
 export default AdvancedAnalytics;
+
