@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use GCP backend API
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com/api';
 
 // Fallback API URL for when primary API is down
 const FALLBACK_API_URL = import.meta.env.VITE_FALLBACK_API_URL || 'https://api.ozarx.in/api';

@@ -116,3 +116,5 @@ To test the API configuration:
 2. Check browser console for any CORS errors
 3. Test API calls from different components
 4. Verify environment variables are loaded correctly
+
+

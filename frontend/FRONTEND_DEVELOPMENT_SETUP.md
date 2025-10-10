@@ -105,3 +105,6 @@ To confirm everything is working:
 - **Environment:** Development mode
 
 Your frontend is now fully configured for local development! 🚀
+
+
+
