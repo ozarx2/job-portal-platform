@@ -34,8 +34,10 @@ app.use((req, res, next) => {
 
 // ------------------- CORS Configuration -------------------
 // Get allowed origins from environment variable or use defaults
-const corsOrigins = process.env.CORS_ORIGINS 
-  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+// Check both CORS_ORIGINS and FRONTEND_ORIGINS for backward compatibility
+const corsOriginsEnv = process.env.CORS_ORIGINS || process.env.FRONTEND_ORIGINS;
+const corsOrigins = corsOriginsEnv 
+  ? corsOriginsEnv.split(',').map(origin => origin.trim()).filter(origin => origin.length > 0)
   : [
       'https://ozarx.in',
       'https://www.ozarx.in',
@@ -216,7 +218,8 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 CORS enabled for: ${allowedOrigins.join(', ')}`);
-  console.log(`🔧 CORS Origins from env: ${process.env.CORS_ORIGINS || 'Using defaults'}`);
+  console.log(`🔧 CORS Origins from env: ${corsOriginsEnv || 'Using defaults'}`);
+  console.log(`🔧 Using env var: ${process.env.CORS_ORIGINS ? 'CORS_ORIGINS' : process.env.FRONTEND_ORIGINS ? 'FRONTEND_ORIGINS' : 'defaults'}`);
   console.log(`🔧 Duplicates removed: ${corsOrigins.length} -> ${allowedOrigins.length} origins`);
   console.log(`📋 Available endpoints:`);
   console.log(`   - POST /api/crm/leads/import (CRM leads import)`);

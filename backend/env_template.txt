@@ -12,8 +12,8 @@ GOOGLE_CLIENT_SECRET=
 # Add your OpenAI API key here:
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Frontend Origins
-FRONTEND_ORIGINS=http://localhost:3000,http://localhost:5173
+# CORS Origins (comma-separated) - Allowed frontend domains
+CORS_ORIGINS=http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com:3000,http://ec2-15-134-104-170.ap-southeast-2.compute.amazonaws.com:5173
 
 # Session Secret
 SESSION_SECRET=b28571735fab77c48b368b09bf547939fef6ee05c31a52504905dccef5c9545aa898a8dbcc9bf6eac573b43db31b0a2a8cd0bbf581387a85682ff1e058a00673
