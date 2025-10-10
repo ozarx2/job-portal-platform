@@ -114,18 +114,59 @@ router.post('/', verifyToken, verifyEmployer, sanitizeBody, validateJobCreation,
     });
   }
 });
-// GET /api/jobs - Get all jobs
+// GET /api/jobs - Get all jobs (with pagination)
 router.get('/', async (req, res) => {
   try {
-    // Optimized query with better indexing and limits
-    const jobs = await Job.find({ status: 'active' })
+    const { page = 1, limit = 20, status, category, location, search } = req.query;
+    
+    // Build filter object
+    const filter = {};
+    if (status) filter.status = status;
+    if (category) filter.category = category;
+    if (location) filter.location = { $regex: location, $options: 'i' };
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // If no status filter provided, default to active jobs
+    if (!status) filter.status = 'active';
+    
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Execute query with pagination
+    const jobs = await Job.find(filter)
       .populate('postedBy', 'name email')
       .populate('companyId', 'name industry location')
       .sort({ createdAt: -1 })
-      .limit(100); // Limit results to prevent large queries
-    res.json(jobs);
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    // Get total count for pagination info
+    const total = await Job.countDocuments(filter);
+    
+    res.json({
+      success: true,
+      data: jobs,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalItems: total,
+        itemsPerPage: parseInt(limit),
+        hasNextPage: skip + parseInt(limit) < total,
+        hasPrevPage: parseInt(page) > 1
+      }
+    });
   } catch (err) {
-    res.status(500).json({ msg: err.message });
+    console.error('❌ Error fetching jobs:', err);
+    res.status(500).json({ 
+      success: false,
+      msg: 'Error fetching jobs',
+      error: err.message 
+    });
   }
 });
 
