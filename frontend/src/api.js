@@ -3,12 +3,13 @@ import axios from 'axios';
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api', // Production API
-  withCredentials: true, // keep if you're using cookies/sessions
+  withCredentials: true, // keep if you’re using cookies/sessions
   headers: {
     'Content-Type': 'application/json'
     // ❌ Removed all Access-Control-Allow-* headers
   },
-});
+}).then(console.log)
+  .catch(console.error);
 
 // Auth endpoints
 export const registerUser = (userData) => API.post('/auth/register', userData);
