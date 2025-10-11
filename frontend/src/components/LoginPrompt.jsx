@@ -13,11 +13,11 @@ const LoginPrompt = ({ onClose }) => {
           </div>
           
           <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
-            Login Required
+            Sign Up Required
           </h2>
           
           <p className="text-gray-600 text-center mb-6">
-            You need to be logged in to apply for jobs. Please login to continue.
+            You need to create an account to apply for jobs. Please sign up to continue.
           </p>
           
           <div className="flex space-x-4">
@@ -29,12 +29,12 @@ const LoginPrompt = ({ onClose }) => {
             </button>
             <button
               onClick={() => {
-                window.location.href = '/login';
+                window.location.href = '/signup';
               }}
               className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center"
             >
-              <LogIn className="w-4 h-4 mr-2" />
-              Go to Login
+              <User className="w-4 h-4 mr-2" />
+              Go to Sign Up
             </button>
           </div>
         </div>

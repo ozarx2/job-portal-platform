@@ -76,7 +76,8 @@ const JobListing = ({ searchResults = null }) => {
   const handleApplyNow = (job) => {
     const token = localStorage.getItem('token');
     if (!token) {
-      setShowLoginPrompt(true);
+      // Redirect to signup page for non-logged-in users
+      window.location.href = '/signup';
       return;
     }
     
@@ -307,15 +308,13 @@ const JobListing = ({ searchResults = null }) => {
                      job.deadline ? formatDate(job.deadline) : 'No deadline'}
                   </div>
                   
-                  {/* Only show Apply Now button for candidates */}
-                  {isCandidate() && (
-                    <button
-                      onClick={() => handleApplyNow(job)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                    >
-                      Apply Now
-                    </button>
-                  )}
+                  {/* Show Apply Now button for all users */}
+                  <button
+                    onClick={() => handleApplyNow(job)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    Apply Now
+                  </button>
                 </div>
               </div>
             ))}

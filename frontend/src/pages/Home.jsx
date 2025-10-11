@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Briefcase, Building2, Users, Award, TrendingUp, Search } from "lucide-react";
+import { Briefcase, Building2, Users, Award, TrendingUp, Search, ArrowRight } from "lucide-react";
 import JobListing from "../components/JobListing";
 import UnifiedSearch from "../components/UnifiedSearch";
 
@@ -137,7 +137,33 @@ const Home = () => {
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Your Dream Job</h1>
-            <p className="text-gray-600">Search and discover amazing career opportunities</p>
+            <p className="text-gray-600 mb-6">Search and discover amazing career opportunities</p>
+            
+            {/* Apply Now CTA Button */}
+            <div className="mb-8">
+              <button
+                onClick={() => {
+                  const token = localStorage.getItem('token');
+                  if (!token) {
+                    window.location.href = '/signup';
+                  } else {
+                    // Scroll to job listings
+                    const jobSection = document.querySelector('.job-listings-section');
+                    if (jobSection) {
+                      jobSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }
+                }}
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                <Briefcase className="w-5 h-5 mr-2" />
+                Apply Now
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </button>
+              <p className="text-sm text-gray-500 mt-2">
+                {!localStorage.getItem('token') ? 'Sign up to start applying' : 'Browse available positions'}
+              </p>
+            </div>
           </div>
           {/* Search Component */}
           <div className="max-w-4xl mx-auto">
@@ -256,7 +282,7 @@ const Home = () => {
       )}
 
       {/* Main Content Section */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8 job-listings-section">
         {!showResults && (
           <div className="mb-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">Latest Jobs</h2>
