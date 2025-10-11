@@ -16,7 +16,7 @@ export default function EmployerDashboard() {
   const [applications, setApplications] = useState([]);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
-  const [jobForm, setJobForm] = useState(() => ({ title: '', description: '', location: '', salary: '', type: 'Full-time', companyId: '' }));
+  const [jobForm, setJobForm] = useState(() => ({ title: '', description: '', location: '', salary: '', type: 'Full-time', companyId: '', deadline: '' }));
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
@@ -573,7 +573,7 @@ export default function EmployerDashboard() {
     if (result.success) {
       setMessage('Job posted successfully!');
       setMessageType('success');
-        setJobForm({ title: '', description: '', location: '', salary: '', type: 'Full-time', companyId: '' });
+        setJobForm({ title: '', description: '', location: '', salary: '', type: 'Full-time', companyId: '', deadline: '' });
         
         // Refresh data to show the new job
         await fetchEmployerData();
@@ -1535,7 +1535,7 @@ export default function EmployerDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Salary Range
@@ -1562,6 +1562,19 @@ export default function EmployerDashboard() {
                         <option key={type} value={type}>{type}</option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Application Deadline
+                    </label>
+                    <input
+                      type="date"
+                      value={jobForm.deadline}
+                      onChange={(e) => setJobForm({ ...jobForm, deadline: e.target.value })}
+                      className="w-full px-4 py-3 border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
                   </div>
                 </div>
 

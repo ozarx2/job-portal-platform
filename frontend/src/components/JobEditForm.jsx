@@ -12,7 +12,8 @@ const JobEditForm = ({ job, mode, onSuccess, onCancel }) => {
     salary: '',
     type: 'Full-time',
     companyId: '',
-    status: 'active'
+    status: 'active',
+    deadline: ''
   });
 
   useEffect(() => {
@@ -24,7 +25,8 @@ const JobEditForm = ({ job, mode, onSuccess, onCancel }) => {
         salary: job.salary || '',
         type: job.type || 'Full-time',
         companyId: job.companyId?._id || '',
-        status: job.status || 'active'
+        status: job.status || 'active',
+        deadline: job.deadline || ''
       });
     }
   }, [job, mode]);
@@ -206,7 +208,7 @@ const JobEditForm = ({ job, mode, onSuccess, onCancel }) => {
             {/* Location & Salary */}
             <div className="bg-white/60 backdrop-blur-sm border border-white/30 p-8 rounded-2xl">
               <h3 className="text-lg font-bold text-gray-800 mb-6 tracking-wide">Location & Compensation</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-800 mb-3 tracking-wide">
                     Location *
@@ -233,6 +235,20 @@ const JobEditForm = ({ job, mode, onSuccess, onCancel }) => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300"
                     placeholder="e.g., $80,000 - $120,000"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-800 mb-3 tracking-wide">
+                    Application Deadline
+                  </label>
+                  <input
+                    type="date"
+                    name="deadline"
+                    value={formData.deadline}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/50 backdrop-blur-sm transition-all duration-300"
+                    min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
               </div>
