@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://ozarx.in/sitemap.xml
+
+# Allow search engines to crawl all pages
+Disallow: /admin-dashboard
+Disallow: /employer-dashboard
+Disallow: /candidate-dashboard
+Disallow: /agent-dashboard
+Disallow: /dashboard
+Disallow: /reports
+
+# Allow public pages
+Allow: /
+Allow: /home
+Allow: /about
+Allow: /services
+Allow: /contact
+Allow: /login
+Allow: /signup
+Allow: /resume-search
+
+# Crawl delay (optional)
+Crawl-delay: 1
