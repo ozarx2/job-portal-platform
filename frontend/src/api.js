@@ -8,8 +8,7 @@ const API = axios.create({
     'Content-Type': 'application/json'
     // ❌ Removed all Access-Control-Allow-* headers
   },
-}).then(console.log)
-  .catch(console.error);
+});
 
 // Auth endpoints
 export const registerUser = (userData) => API.post('/auth/register', userData);
