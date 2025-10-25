@@ -2,9 +2,8 @@
 // This overrides the environment variable approach
 
 import axios from 'axios';
+import { getCorsProxy, getProxiedUrl, handleProxyError } from '../utils/corsProxyManager';
 
-// CORS Proxy for Vercel deployments
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 const ORIGINAL_API_URL = 'https://api.ozarx.in/api';
 
 // Check if we're on Vercel
@@ -13,7 +12,7 @@ const isVercel = window.location.hostname.includes('vercel.app');
 // Get the correct API URL
 export const getApiUrl = () => {
   if (isVercel) {
-    const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(ORIGINAL_API_URL)}`;
+    const proxiedUrl = getProxiedUrl(ORIGINAL_API_URL);
     console.log('🔧 CORS Fix: Using proxy for Vercel');
     console.log('🔄 Proxy URL:', proxiedUrl);
     return proxiedUrl;
@@ -57,7 +56,7 @@ if (isVercel) {
   
   axios.get = function(url, config = {}) {
     if (url && url.includes('api.ozarx.in')) {
-      const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+      const proxiedUrl = getProxiedUrl(url);
       console.log('🔄 GET proxied:', url, '->', proxiedUrl);
       return originalGet.call(this, proxiedUrl, config);
     }
@@ -66,7 +65,7 @@ if (isVercel) {
   
   axios.post = function(url, data, config = {}) {
     if (url && url.includes('api.ozarx.in')) {
-      const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+      const proxiedUrl = getProxiedUrl(url);
       console.log('🔄 POST proxied:', url, '->', proxiedUrl);
       return originalPost.call(this, proxiedUrl, data, config);
     }
@@ -75,7 +74,7 @@ if (isVercel) {
   
   axios.put = function(url, data, config = {}) {
     if (url && url.includes('api.ozarx.in')) {
-      const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+      const proxiedUrl = getProxiedUrl(url);
       console.log('🔄 PUT proxied:', url, '->', proxiedUrl);
       return originalPut.call(this, proxiedUrl, data, config);
     }
@@ -84,7 +83,7 @@ if (isVercel) {
   
   axios.delete = function(url, config = {}) {
     if (url && url.includes('api.ozarx.in')) {
-      const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+      const proxiedUrl = getProxiedUrl(url);
       console.log('🔄 DELETE proxied:', url, '->', proxiedUrl);
       return originalDelete.call(this, proxiedUrl, config);
     }

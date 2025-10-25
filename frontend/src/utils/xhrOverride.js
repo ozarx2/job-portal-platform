@@ -1,7 +1,8 @@
 // XMLHttpRequest Override for CORS
 // This is the most aggressive approach to catch ALL HTTP requests
 
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+import { getProxiedUrl } from './corsProxyManager';
+
 const isVercel = window.location.hostname.includes('vercel.app');
 
 if (isVercel) {
@@ -17,7 +18,7 @@ if (isVercel) {
     
     xhr.open = function(method, url, ...args) {
       if (url && url.includes('api.ozarx.in')) {
-        const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+        const proxiedUrl = getProxiedUrl(url);
         console.log('🔄 XHR proxied:', url, '->', proxiedUrl);
         return originalOpen.call(this, method, proxiedUrl, ...args);
       }
