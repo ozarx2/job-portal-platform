@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AppProvider } from './contexts/AppContext';
 // Import API configuration first to override environment variables
 import './config/apiConfig';
+// Import XHR override for complete CORS coverage
+import './utils/xhrOverride';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import LoginForm from './components/auth/LoginForm';

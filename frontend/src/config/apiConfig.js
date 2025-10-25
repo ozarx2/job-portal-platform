@@ -48,6 +48,48 @@ if (isVercel) {
     },
     (error) => Promise.reject(error)
   );
+  
+  // Override axios methods directly to ensure ALL calls are proxied
+  const originalGet = axios.get;
+  const originalPost = axios.post;
+  const originalPut = axios.put;
+  const originalDelete = axios.delete;
+  
+  axios.get = function(url, config = {}) {
+    if (url && url.includes('api.ozarx.in')) {
+      const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+      console.log('🔄 GET proxied:', url, '->', proxiedUrl);
+      return originalGet.call(this, proxiedUrl, config);
+    }
+    return originalGet.call(this, url, config);
+  };
+  
+  axios.post = function(url, data, config = {}) {
+    if (url && url.includes('api.ozarx.in')) {
+      const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+      console.log('🔄 POST proxied:', url, '->', proxiedUrl);
+      return originalPost.call(this, proxiedUrl, data, config);
+    }
+    return originalPost.call(this, url, data, config);
+  };
+  
+  axios.put = function(url, data, config = {}) {
+    if (url && url.includes('api.ozarx.in')) {
+      const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+      console.log('🔄 PUT proxied:', url, '->', proxiedUrl);
+      return originalPut.call(this, proxiedUrl, data, config);
+    }
+    return originalPut.call(this, url, data, config);
+  };
+  
+  axios.delete = function(url, config = {}) {
+    if (url && url.includes('api.ozarx.in')) {
+      const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+      console.log('🔄 DELETE proxied:', url, '->', proxiedUrl);
+      return originalDelete.call(this, proxiedUrl, config);
+    }
+    return originalDelete.call(this, url, config);
+  };
 }
 
 console.log('✅ API Configuration loaded:', API_BASE_URL);
