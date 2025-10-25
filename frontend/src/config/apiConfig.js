@@ -39,7 +39,7 @@ if (isVercel) {
   axios.interceptors.request.use(
     (config) => {
       if (config.url && config.url.includes('api.ozarx.in')) {
-        const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(config.url)}`;
+        const proxiedUrl = getProxiedUrl(config.url);
         console.log('🔄 Request proxied:', config.url, '->', proxiedUrl);
         config.url = proxiedUrl;
       }
