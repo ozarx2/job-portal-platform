@@ -9,6 +9,7 @@ import JobManagement from './JobManagement';
 import ApplicationManagement from './ApplicationManagement';
 import CompanyManagement from './CompanyManagement';
 import NewsletterManagement from './NewsletterManagement';
+import LeadsManagement from './LeadsManagement';
 // CronManagementTest removed from production UI
 import ReportsDashboard from './ReportsDashboard';
 
@@ -19,7 +20,8 @@ const ModernAdminDashboard = () => {
     totalUsers: 0,
     totalJobs: 0,
     totalApplications: 0,
-    totalDocuments: 0
+    totalDocuments: 0,
+    totalLeads: 0
   });
 
   useEffect(() => {
@@ -87,6 +89,16 @@ const ModernAdminDashboard = () => {
       bgColor: 'bg-pink-50',
       textColor: 'text-pink-600',
       borderColor: 'border-pink-200'
+    },
+    {
+      title: 'CRM Leads',
+      value: stats.totalLeads,
+      change: '+20% from last month',
+      changeType: 'positive',
+      icon: '👥',
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-600',
+      borderColor: 'border-purple-200'
     }
   ];
 
@@ -272,6 +284,20 @@ const ModernAdminDashboard = () => {
               </button>
               
               <button 
+                onClick={() => setActiveTab('leads')} 
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'leads' 
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                    : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span>Leads Management</span>
+              </button>
+              
+              <button 
                 onClick={() => setActiveTab('cron')} 
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeTab === 'cron' 
@@ -347,7 +373,7 @@ const ModernAdminDashboard = () => {
           </div>
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             {kpiCards.map((card, index) => (
               <div key={index} className={`bg-white/80 backdrop-blur-sm p-6 rounded-2xl border ${card.borderColor} shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}>
                 <div className="flex items-center justify-between">
@@ -376,6 +402,7 @@ const ModernAdminDashboard = () => {
             {activeTab === 'companies' && <CompanyManagement />}
             {activeTab === 'reports' && <ReportsDashboard />}
             {activeTab === 'newsletter' && <NewsletterManagement />}
+            {activeTab === 'leads' && <LeadsManagement />}
             {/* Cron test tab removed */}
           </div>
         </div>
