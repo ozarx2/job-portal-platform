@@ -24,3 +24,4 @@ Allow: /resume-search
 
 # Crawl delay (optional)
 Crawl-delay: 1
+

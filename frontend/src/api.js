@@ -1,14 +1,47 @@
 // src/api.js
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
+
+// CORS Proxy for Vercel deployments
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+// Function to get API URL with CORS proxy for Vercel
+const getApiUrl = () => {
+  const isVercel = window.location.hostname.includes('vercel.app');
+  
+  if (isVercel) {
+    // Use CORS proxy for Vercel deployments
+    return `${CORS_PROXY}${encodeURIComponent(API_BASE_URL)}`;
+  }
+  
+  // Use direct API for local development
+  return API_BASE_URL;
+};
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api', // Production API
-  withCredentials: true, // keep if you’re using cookies/sessions
+  baseURL: getApiUrl(),
+  withCredentials: false, // Disable credentials for CORS proxy
   headers: {
-    'Content-Type': 'application/json'
-    // ❌ Removed all Access-Control-Allow-* headers
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
   },
 });
+
+// Add response interceptor for better error handling
+API.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.code === 'ERR_NETWORK' || error.message.includes('CORS')) {
+      console.error('🚨 CORS Error detected!');
+      console.error('📍 Current origin:', window.location.origin);
+      console.error('💡 Frontend CORS fix applied. If issues persist, backend CORS configuration needs updating.');
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Auth endpoints
 export const registerUser = (userData) => API.post('/auth/register', userData);
