@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { apiGet, apiPost, apiPut, apiDelete } from '../../utils/apiClient';
 import { formatJobId } from '../../utils/jobIdGenerator';
 
 const LeadsManagement = () => {
@@ -43,7 +43,6 @@ const LeadsManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
       const params = {
         page: currentPage,
@@ -51,9 +50,9 @@ const LeadsManagement = () => {
         ...filters
       };
 
-      const response = await axios.get(`${API_BASE_URL}/crm/leads`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params
+      const response = await apiGet('/crm/leads', {
+        'Authorization': `Bearer ${token}`,
+        ...params
       });
 
       if (response.data.success) {
@@ -70,10 +69,9 @@ const LeadsManagement = () => {
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
-      const response = await axios.get(`${API_BASE_URL}/jobs`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await apiGet('/jobs', {
+        'Authorization': `Bearer ${token}`
       });
 
       if (response.data.success) {
@@ -87,10 +85,9 @@ const LeadsManagement = () => {
   const fetchAgents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
-      const response = await axios.get(`${API_BASE_URL}/users?role=agent`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await apiGet('/users?role=agent', {
+        'Authorization': `Bearer ${token}`
       });
 
       if (response.data.success) {
@@ -104,10 +101,9 @@ const LeadsManagement = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
-      const response = await axios.get(`${API_BASE_URL}/crm/leads/stats`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await apiGet('/crm/leads/stats', {
+        'Authorization': `Bearer ${token}`
       });
 
       if (response.data.success) {
@@ -121,11 +117,10 @@ const LeadsManagement = () => {
   const updateLeadStatus = async (leadId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
-      await axios.put(`${API_BASE_URL}/crm/leads/${leadId}`, 
+      await apiPut(`/crm/leads/${leadId}`, 
         { status: newStatus },
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { 'Authorization': `Bearer ${token}` }
       );
       
       fetchLeads();
@@ -140,11 +135,10 @@ const LeadsManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
-      await axios.put(`${API_BASE_URL}/crm/leads/bulk-update`, 
+      await apiPut('/crm/leads/bulk-update', 
         { leadIds: selectedLeads, status },
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { 'Authorization': `Bearer ${token}` }
       );
       
       setSelectedLeads([]);
@@ -160,10 +154,9 @@ const LeadsManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
-      await axios.delete(`${API_BASE_URL}/crm/leads/${leadId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      await apiDelete(`/crm/leads/${leadId}`, {
+        'Authorization': `Bearer ${token}`
       });
       
       fetchLeads();
@@ -181,11 +174,10 @@ const LeadsManagement = () => {
   const handleSaveLead = async (leadData) => {
     try {
       const token = localStorage.getItem('token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.ozarx.in/api';
       
-      await axios.put(`${API_BASE_URL}/crm/leads/${editingLead._id}`, 
+      await apiPut(`/crm/leads/${editingLead._id}`, 
         leadData,
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { 'Authorization': `Bearer ${token}` }
       );
       
       setShowEditModal(false);

@@ -10,12 +10,20 @@ const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 const getApiUrl = () => {
   const isVercel = window.location.hostname.includes('vercel.app');
   
+  console.log('🔍 CORS Debug Info:');
+  console.log('📍 Current hostname:', window.location.hostname);
+  console.log('🌐 Is Vercel:', isVercel);
+  console.log('🔗 API Base URL:', API_BASE_URL);
+  
   if (isVercel) {
     // Use CORS proxy for Vercel deployments
-    return `${CORS_PROXY}${encodeURIComponent(API_BASE_URL)}`;
+    const proxyUrl = `${CORS_PROXY}${encodeURIComponent(API_BASE_URL)}`;
+    console.log('🔄 Using CORS Proxy:', proxyUrl);
+    return proxyUrl;
   }
   
   // Use direct API for local development
+  console.log('🏠 Using Direct API:', API_BASE_URL);
   return API_BASE_URL;
 };
 

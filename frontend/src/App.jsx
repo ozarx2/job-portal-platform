@@ -2,6 +2,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AppProvider } from './contexts/AppContext';
+// Import CORS interceptor to apply globally
+import './utils/corsInterceptor';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import LoginForm from './components/auth/LoginForm';
